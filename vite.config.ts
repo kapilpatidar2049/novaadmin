@@ -1,10 +1,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+// Use "./" so built app works when opening index.html via file:// (double-click).
+// For deploy on a subpath, set VITE_BASE_URL e.g. /2026/beautician/admin/
+export default defineConfig({
+  base: process.env.VITE_BASE_URL || "./",
   server: {
     host: "::",
     port: 8080,
@@ -12,10 +14,10 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   MapPin,
@@ -12,8 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Shield,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,6 +40,8 @@ const secondaryNavigation = [
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -54,19 +56,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
-                <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
-              </div>
+              <img src="/logo.png" alt="Nova Beauty" className="h-9 w-auto object-contain" />
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-sidebar-foreground">BeautyAdmin</span>
+                <span className="text-sm font-semibold text-sidebar-foreground">Nova Beauty</span>
                 <span className="text-xs text-sidebar-muted">Super Admin</span>
               </div>
             </div>
           )}
           {collapsed && (
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary mx-auto">
-              <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
-            </div>
+            <img src="/logo.png" alt="Nova Beauty" className="h-9 w-9 object-contain mx-auto" />
           )}
         </div>
 
@@ -163,14 +161,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Separator orientation="vertical" className="h-8" />
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-xs font-medium text-primary-foreground">SA</span>
+                <span className="text-xs font-medium text-primary-foreground">{user?.name?.charAt(0) ?? "A"}</span>
               </div>
               {!collapsed && (
                 <div className="hidden sm:flex flex-col">
                   <span className="text-sm font-medium text-foreground">Super Admin</span>
-                  <span className="text-xs text-muted-foreground">admin@beauty.com</span>
+                  <span className="text-xs text-muted-foreground">{user?.email ?? ""}</span>
                 </div>
               )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => { logout(); navigate("/login"); }}
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4 text-muted-foreground" />
+              </Button>
             </div>
           </div>
         </header>

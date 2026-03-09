@@ -286,3 +286,9 @@
     }
   }
 }
+
+/* Leaflet map: custom markers (no default icon) */
+.leaflet-marker-icon.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Bell, AlertTriangle, Clock, XCircle, CheckCircle, Filter } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -11,34 +11,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-interface Alert {
-  id: string;
-  type: "critical" | "warning" | "info";
-  title: string;
-  description: string;
-  city: string;
-  time: string;
-  read: boolean;
-}
-
-const alertsData: Alert[] = [
-  { id: "1", type: "critical", title: "Service Delay - Exceeded 45 mins", description: "Beautician Priya Sharma is delayed by 48 minutes for appointment #4521", city: "Mumbai", time: "2 min ago", read: false },
-  { id: "2", type: "warning", title: "Low Beautician Availability", description: "Only 2 beauticians available in South Delhi zone during peak hours", city: "Delhi", time: "15 min ago", read: false },
-  { id: "3", type: "critical", title: "Customer Complaint Filed", description: "Customer reported service quality issue for appointment #4518", city: "Bangalore", time: "32 min ago", read: false },
-  { id: "4", type: "info", title: "New Vendor Registration", description: "Beauty Plus Salon has completed registration in Chennai", city: "Chennai", time: "1 hour ago", read: true },
-  { id: "5", type: "warning", title: "Payment Settlement Overdue", description: "3 vendor settlements pending for more than 48 hours", city: "Mumbai", time: "2 hours ago", read: true },
-  { id: "6", type: "info", title: "High Demand Alert", description: "Booking requests increased by 40% in Hyderabad zone", city: "Hyderabad", time: "3 hours ago", read: true },
-  { id: "7", type: "critical", title: "Service Cancellation Spike", description: "12 cancellations in last hour - investigate beautician availability", city: "Pune", time: "4 hours ago", read: true },
-  { id: "8", type: "warning", title: "Rating Drop Alert", description: "Vendor Style Manor's rating dropped below 4.0 this week", city: "Bangalore", time: "5 hours ago", read: true },
-  { id: "9", type: "info", title: "System Maintenance", description: "Scheduled maintenance completed successfully", city: "All", time: "6 hours ago", read: true },
-  { id: "10", type: "warning", title: "GPS Tracking Issue", description: "3 beauticians showing offline despite active sessions", city: "Delhi", time: "8 hours ago", read: true },
-];
+import { adminApi, type ApiAlert } from "@/lib/api";
 
 const Alerts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [alerts, setAlerts] = useState<Alert[]>(alertsData);
+  const [alerts, setAlerts] = useState<ApiAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    adminApi.getAlerts().then((res) => {
+      if (res.success && res.data) setAlerts(Array.isArray(res.data) ? res.data : []);
+      setLoading(false);
+    });
+  }, []);
 
   const filteredAlerts = alerts.filter((alert) => {
     const matchesSearch =
@@ -53,7 +40,7 @@ const Alerts = () => {
   const unreadCount = alerts.filter((a) => !a.read).length;
 
   const markAllRead = () => {
-    setAlerts(alerts.map((a) => ({ ...a, read: true })));
+    setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
   };
 
   const getIcon = (type: string) => {
@@ -157,6 +144,10 @@ const Alerts = () => {
 
         {/* Alerts List */}
         <div className="bg-card rounded-xl border border-border divide-y divide-border">
+          {loading ? (
+            <div className="p-8 text-center text-muted-foreground">Loading alerts...</div>
+          ) : (
+          <>
           {filteredAlerts.map((alert) => (
             <div
               key={alert.id}
@@ -210,7 +201,7 @@ const Alerts = () => {
               </div>
             </div>
           ))}
-          {filteredAlerts.length === 0 && (
+          {!loading && filteredAlerts.length === 0 && (
             <div className="p-8 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground">No alerts found</h3>
@@ -218,6 +209,8 @@ const Alerts = () => {
                 No alerts match your current filters
               </p>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

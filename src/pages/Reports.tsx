@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Download, Calendar, TrendingUp, DollarSign, CheckCircle, MapPin } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -19,49 +17,48 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  LineChart,
-  Line,
 } from "recharts";
+import { adminApi } from "@/lib/api";
 
-const monthlyRevenue = [
-  { month: "Jan", revenue: 850000, services: 1420 },
-  { month: "Feb", revenue: 920000, services: 1580 },
-  { month: "Mar", revenue: 880000, services: 1490 },
-  { month: "Apr", revenue: 1050000, services: 1720 },
-  { month: "May", revenue: 980000, services: 1640 },
-  { month: "Jun", revenue: 1150000, services: 1890 },
-  { month: "Jul", revenue: 1240000, services: 2050 },
-];
-
-const cityRevenue = [
-  { city: "Mumbai", revenue: 285000, growth: 18 },
-  { city: "Delhi", revenue: 234000, growth: 12 },
-  { city: "Bangalore", revenue: 198000, growth: 15 },
-  { city: "Chennai", revenue: 156000, growth: 8 },
-  { city: "Hyderabad", revenue: 142000, growth: 22 },
-  { city: "Pune", revenue: 118000, growth: 10 },
-];
-
-const vendorEarnings = [
-  { name: "Glamour Studios", earnings: 145000, services: 286 },
-  { name: "Beauty Hub", earnings: 128000, services: 254 },
-  { name: "Style Manor", earnings: 112000, services: 228 },
-  { name: "Elite Salon", earnings: 98000, services: 196 },
-  { name: "Luxe Beauty", earnings: 86000, services: 172 },
-];
-
-const serviceStats = [
-  { month: "Jan", completed: 1380, cancelled: 40 },
-  { month: "Feb", completed: 1520, cancelled: 60 },
-  { month: "Mar", completed: 1440, cancelled: 50 },
-  { month: "Apr", completed: 1680, cancelled: 40 },
-  { month: "May", completed: 1590, cancelled: 50 },
-  { month: "Jun", completed: 1840, cancelled: 50 },
-  { month: "Jul", completed: 2000, cancelled: 50 },
-];
+function getDateRange(period: string): { from?: string; to?: string } {
+  const to = new Date();
+  const from = new Date();
+  if (period === "7d") from.setDate(from.getDate() - 7);
+  else if (period === "30d") from.setDate(from.getDate() - 30);
+  else if (period === "90d") from.setDate(from.getDate() - 90);
+  else if (period === "1y") from.setFullYear(from.getFullYear() - 1);
+  return { from: from.toISOString().split("T")[0], to: to.toISOString().split("T")[0] };
+}
 
 const Reports = () => {
   const [period, setPeriod] = useState("7d");
+  const [paymentsByStatus, setPaymentsByStatus] = useState<Array<{ _id: string; totalAmount: number; count: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [dashboard, setDashboard] = useState<{ totalPaidPayments?: number; topVendors?: Array<{ name: string; revenue: number }> } | null>(null);
+
+  const { from, to } = useMemo(() => getDateRange(period), [period]);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([adminApi.getReports(from, to), adminApi.getDashboard()]).then(([reportRes, dashRes]) => {
+      if (reportRes.success && reportRes.data && "payments" in reportRes.data) {
+        const payments = (reportRes.data as { payments: Array<{ _id: string; totalAmount: number; count: number }> }).payments || [];
+        setPaymentsByStatus(payments);
+      }
+      if (dashRes.success && dashRes.data) {
+        setDashboard({
+          totalPaidPayments: dashRes.data.totalPaidPayments,
+          topVendors: dashRes.data.topVendors?.map((v) => ({ name: v.name, revenue: v.revenue })),
+        });
+      }
+      setLoading(false);
+    });
+  }, [from, to]);
+
+  const totalPaid = paymentsByStatus.find((p) => p._id === "paid")?.totalAmount ?? 0;
+  const paidCount = paymentsByStatus.find((p) => p._id === "paid")?.count ?? 0;
+  const paymentChartData = paymentsByStatus.map((p) => ({ status: p._id, amount: p.totalAmount, count: p.count }));
+  const vendorEarnings = dashboard?.topVendors ?? [];
 
   return (
     <AdminLayout>
@@ -100,12 +97,11 @@ const Reports = () => {
                 <DollarSign className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="stat-card-label">Total Revenue</p>
-                <p className="text-2xl font-bold text-foreground">₹12.4L</p>
-                <p className="stat-card-trend positive">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  +15.3% vs last period
+                <p className="stat-card-label">Total Revenue (Paid)</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? "—" : `₹${(totalPaid / 100000).toFixed(2)}L`}
                 </p>
+                <p className="text-xs text-muted-foreground">From payments in selected period</p>
               </div>
             </div>
           </div>
@@ -115,12 +111,9 @@ const Reports = () => {
                 <CheckCircle className="h-6 w-6 text-success" />
               </div>
               <div>
-                <p className="stat-card-label">Services Completed</p>
-                <p className="text-2xl font-bold text-foreground">11,790</p>
-                <p className="stat-card-trend positive">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  +12.8% vs last period
-                </p>
+                <p className="stat-card-label">Paid Transactions</p>
+                <p className="text-2xl font-bold text-foreground">{loading ? "—" : paidCount}</p>
+                <p className="text-xs text-muted-foreground">In selected period</p>
               </div>
             </div>
           </div>
@@ -130,12 +123,9 @@ const Reports = () => {
                 <MapPin className="h-6 w-6 text-accent" />
               </div>
               <div>
-                <p className="stat-card-label">Active Cities</p>
-                <p className="text-2xl font-bold text-foreground">8</p>
-                <p className="stat-card-trend positive">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  +2 new cities
-                </p>
+                <p className="stat-card-label">Payment Statuses</p>
+                <p className="text-2xl font-bold text-foreground">{loading ? "—" : paymentsByStatus.length}</p>
+                <p className="text-xs text-muted-foreground">paid, pending, failed, etc.</p>
               </div>
             </div>
           </div>
@@ -145,12 +135,9 @@ const Reports = () => {
                 <TrendingUp className="h-6 w-6 text-warning" />
               </div>
               <div>
-                <p className="stat-card-label">Completion Rate</p>
-                <p className="text-2xl font-bold text-foreground">97.2%</p>
-                <p className="stat-card-trend positive">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  +0.8% vs last period
-                </p>
+                <p className="stat-card-label">Period</p>
+                <p className="text-2xl font-bold text-foreground">{period}</p>
+                <p className="text-xs text-muted-foreground">{from} to {to}</p>
               </div>
             </div>
           </div>
@@ -158,138 +145,99 @@ const Reports = () => {
 
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue Trend */}
+          {/* Payment by Status */}
           <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Revenue Trend</h3>
-                <p className="text-sm text-muted-foreground">Monthly revenue analysis</p>
+                <h3 className="text-lg font-semibold text-foreground">Payments by Status</h3>
+                <p className="text-sm text-muted-foreground">Amount and count in selected period</p>
               </div>
             </div>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyRevenue}>
-                  <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(234, 89%, 54%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(234, 89%, 54%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
-                  <XAxis dataKey="month" stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} />
-                  <YAxis stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} tickFormatter={(value) => `₹${value / 100000}L`} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(220, 13%, 91%)",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(value: number) => [`₹${(value / 100000).toFixed(2)}L`, "Revenue"]}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="hsl(234, 89%, 54%)" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">Loading...</div>
+              ) : paymentChartData.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">No payment data for this period</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={paymentChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
+                    <XAxis dataKey="status" stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} />
+                    <YAxis stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} tickFormatter={(v) => `₹${v / 1000}K`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "hsl(0, 0%, 100%)", border: "1px solid hsl(220, 13%, 91%)", borderRadius: "8px" }}
+                      formatter={(value: number, name: string, props: { payload: { count: number } }) => [`₹${(value / 1000).toFixed(0)}K (${props.payload.count} txns)`, "Amount"]}
+                    />
+                    <Bar dataKey="amount" fill="hsl(234, 89%, 54%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 
-          {/* City-wise Revenue */}
+          {/* Payment count by status */}
           <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">City-wise Revenue</h3>
-                <p className="text-sm text-muted-foreground">Revenue by city</p>
+                <h3 className="text-lg font-semibold text-foreground">Transaction Count by Status</h3>
+                <p className="text-sm text-muted-foreground">Number of payments per status</p>
               </div>
             </div>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cityRevenue} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" horizontal={false} />
-                  <XAxis type="number" stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} tickFormatter={(value) => `₹${value / 1000}K`} />
-                  <YAxis dataKey="city" type="category" stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} width={80} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(220, 13%, 91%)",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(value: number) => [`₹${(value / 1000).toFixed(0)}K`, "Revenue"]}
-                  />
-                  <Bar dataKey="revenue" fill="hsl(173, 80%, 40%)" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">Loading...</div>
+              ) : paymentChartData.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">No data</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={paymentChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
+                    <XAxis dataKey="status" stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} />
+                    <YAxis stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(0, 0%, 100%)", border: "1px solid hsl(220, 13%, 91%)", borderRadius: "8px" }} />
+                    <Bar dataKey="count" fill="hsl(173, 80%, 40%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Charts Row 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Service Completion Stats */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Service Completion</h3>
-                <p className="text-sm text-muted-foreground">Completed vs cancelled services</p>
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-success" />
-                  <span className="text-muted-foreground">Completed</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-destructive" />
-                  <span className="text-muted-foreground">Cancelled</span>
-                </div>
-              </div>
-            </div>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={serviceStats}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
-                  <XAxis dataKey="month" stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} />
-                  <YAxis stroke="hsl(220, 9%, 46%)" fontSize={12} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(220, 13%, 91%)",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Line type="monotone" dataKey="completed" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="cancelled" stroke="hsl(0, 84%, 60%)" strokeWidth={2} dot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Top Vendor Earnings */}
+        {/* Top Vendor Earnings */}
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Top Vendor Earnings</h3>
-                <p className="text-sm text-muted-foreground">This month's top performers</p>
+                <p className="text-sm text-muted-foreground">From dashboard (paid payments by vendor)</p>
               </div>
             </div>
             <div className="space-y-4">
-              {vendorEarnings.map((vendor, index) => (
-                <div key={vendor.name} className="flex items-center gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium text-sm">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-foreground truncate">{vendor.name}</span>
-                      <span className="text-sm font-medium text-foreground">₹{(vendor.earnings / 1000).toFixed(0)}K</span>
+              {loading ? (
+                <div className="py-8 text-center text-muted-foreground">Loading...</div>
+              ) : vendorEarnings.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">No vendor earnings data yet</div>
+              ) : (
+                vendorEarnings.map((vendor, index) => (
+                  <div key={vendor.name} className="flex items-center gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium text-sm">
+                      {index + 1}
                     </div>
-                    <div className="w-full bg-secondary rounded-full h-2">
-                      <div
-                        className="bg-primary rounded-full h-2 transition-all duration-500"
-                        style={{ width: `${(vendor.earnings / vendorEarnings[0].earnings) * 100}%` }}
-                      />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-foreground truncate">{vendor.name}</span>
+                        <span className="text-sm font-medium text-foreground">₹{(vendor.revenue / 1000).toFixed(0)}K</span>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2">
+                        <div
+                          className="bg-primary rounded-full h-2 transition-all duration-500"
+                          style={{ width: `${vendorEarnings[0].revenue ? (vendor.revenue / vendorEarnings[0].revenue) * 100 : 0}%` }}
+                        />
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">{vendor.services} services completed</p>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
