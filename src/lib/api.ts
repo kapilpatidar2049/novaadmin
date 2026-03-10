@@ -44,9 +44,11 @@ async function request<T>(
   }
   const token = getToken();
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(init.headers as Record<string, string>),
   };
+  if (!(init.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(url.toString(), { ...init, headers });
@@ -202,8 +204,17 @@ export const adminApi = {
     request<{ items: ApiService[]; meta: { page: number; limit: number; total: number } }>("/admin/services", {
       params: { page: String(page), limit: String(limit), search },
     }),
-  createService: (body: { name: string; category?: string; description?: string; imageUrl?: string; basePrice: number; durationMinutes: number }) =>
-    request<ApiService>("/admin/services", { method: "POST", body: JSON.stringify(body) }),
+  createService: (body: { name: string; category?: string; description?: string; basePrice: number; durationMinutes: number; imageFile?: File | null; imageUrl?: string }) => {
+    const form = new FormData();
+    form.append("name", body.name);
+    form.append("basePrice", String(body.basePrice));
+    form.append("durationMinutes", String(body.durationMinutes));
+    if (body.category) form.append("category", body.category);
+    if (body.description) form.append("description", body.description);
+    if (body.imageUrl) form.append("imageUrl", body.imageUrl);
+    if (body.imageFile) form.append("image", body.imageFile);
+    return request<ApiService>("/admin/services", { method: "POST", body: form });
+  },
   updateService: (id: string, body: { name?: string; category?: string; description?: string; imageUrl?: string; basePrice?: number; durationMinutes?: number; isActive?: boolean }) =>
     request<ApiService>(`/admin/services/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteService: (id: string) =>

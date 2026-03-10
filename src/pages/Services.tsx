@@ -31,6 +31,7 @@ const Services = () => {
   const [newCategory, setNewCategory] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [newPrice, setNewPrice] = useState("");
   const [newDuration, setNewDuration] = useState("");
   const [saving, setSaving] = useState(false);
@@ -56,6 +57,7 @@ const Services = () => {
       category: newCategory.trim() || undefined,
       description: newDesc.trim() || undefined,
       imageUrl: newImageUrl.trim() || undefined,
+      imageFile: newImageFile,
       basePrice: price,
       durationMinutes: duration,
     });
@@ -65,6 +67,7 @@ const Services = () => {
       setNewCategory("");
       setNewDesc("");
       setNewImageUrl("");
+      setNewImageFile(null);
       setNewPrice("");
       setNewDuration("");
       setDialogOpen(false);
@@ -116,13 +119,29 @@ const Services = () => {
                   <Input id="description" placeholder="Optional" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="imageUrl">Image URL</Label>
-                  <Input
-                    id="imageUrl"
-                    placeholder="https://example.com/image.jpg"
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                  />
+                  <Label htmlFor="imageUrl">Service Image</Label>
+                  <div className="grid gap-2">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setNewImageFile(file);
+                          const previewUrl = URL.createObjectURL(file);
+                          setNewImageUrl(previewUrl);
+                        }}
+                      />
+                      {newImageUrl && (
+                        <img
+                          src={newImageUrl}
+                          alt="Service preview"
+                          className="h-16 w-16 rounded-md object-cover border"
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
