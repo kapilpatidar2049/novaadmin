@@ -28,7 +28,9 @@ const Services = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newCategory, setNewCategory] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newDuration, setNewDuration] = useState("");
   const [saving, setSaving] = useState(false);
@@ -51,14 +53,18 @@ const Services = () => {
     setSaving(true);
     const res = await adminApi.createService({
       name: newName.trim(),
+      category: newCategory.trim() || undefined,
       description: newDesc.trim() || undefined,
+      imageUrl: newImageUrl.trim() || undefined,
       basePrice: price,
       durationMinutes: duration,
     });
     setSaving(false);
     if (res.success) {
       setNewName("");
+      setNewCategory("");
       setNewDesc("");
+      setNewImageUrl("");
       setNewPrice("");
       setNewDuration("");
       setDialogOpen(false);
@@ -97,8 +103,26 @@ const Services = () => {
                   <Input id="serviceName" placeholder="Enter service name" value={newName} onChange={(e) => setNewName(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    placeholder="e.g. hair, makeup, facial"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="description">Description</Label>
                   <Input id="description" placeholder="Optional" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="imageUrl">Image URL</Label>
+                  <Input
+                    id="imageUrl"
+                    placeholder="https://example.com/image.jpg"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">

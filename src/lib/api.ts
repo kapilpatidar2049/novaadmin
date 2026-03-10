@@ -114,7 +114,9 @@ export interface ApiVendor {
 export interface ApiService {
   _id: string;
   name: string;
+  category?: string;
   description?: string;
+  imageUrl?: string;
   basePrice: number;
   durationMinutes: number;
   isActive?: boolean;
@@ -200,9 +202,9 @@ export const adminApi = {
     request<{ items: ApiService[]; meta: { page: number; limit: number; total: number } }>("/admin/services", {
       params: { page: String(page), limit: String(limit), search },
     }),
-  createService: (body: { name: string; description?: string; basePrice: number; durationMinutes: number }) =>
+  createService: (body: { name: string; category?: string; description?: string; imageUrl?: string; basePrice: number; durationMinutes: number }) =>
     request<ApiService>("/admin/services", { method: "POST", body: JSON.stringify(body) }),
-  updateService: (id: string, body: { name?: string; description?: string; basePrice?: number; durationMinutes?: number; isActive?: boolean }) =>
+  updateService: (id: string, body: { name?: string; category?: string; description?: string; imageUrl?: string; basePrice?: number; durationMinutes?: number; isActive?: boolean }) =>
     request<ApiService>(`/admin/services/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteService: (id: string) =>
     request(`/admin/services/${id}`, { method: "DELETE" }),

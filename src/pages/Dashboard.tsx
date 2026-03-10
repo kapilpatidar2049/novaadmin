@@ -7,6 +7,7 @@ import { RevenueChart, CityRevenueChart, ServiceDistributionChart } from "@/comp
 import { RecentAlerts } from "@/components/dashboard/RecentAlerts";
 import { TopVendorsTable } from "@/components/dashboard/TopVendorsTable";
 import { adminApi } from "@/lib/api";
+import alertSound from "@/alert.mp3";
 
 function useDashboardStats() {
   const [stats, setStats] = useState<Array<{ title: string; value: string; change: number; icon: typeof Users; iconColor: string }>>([
@@ -40,6 +41,7 @@ const Dashboard = () => {
   const [liveBeauticians, setLiveBeauticians] = useState(defaultBeauticians);
   const [recentAlerts, setRecentAlerts] = useState(defaultAlerts);
   const [topVendors, setTopVendors] = useState(defaultTopVendors);
+   const [lastAlertIds, setLastAlertIds] = useState<string[]>([]);
 
   const fetchDashboard = () => {
     adminApi.getDashboard().then((res) => {
@@ -59,6 +61,26 @@ const Dashboard = () => {
     const interval = setInterval(fetchDashboard, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Play alert tone when new alerts arrive
+  useEffect(() => {
+    const ids = recentAlerts.map((a) => a.id);
+    if (!ids.length) {
+      setLastAlertIds([]);
+      return;
+    }
+    if (!lastAlertIds.length) {
+      // Initial load: remember alerts but don't play sound
+      setLastAlertIds(ids);
+      return;
+    }
+    const hasNew = ids.some((id) => !lastAlertIds.includes(id));
+    if (hasNew) {
+      const audio = new Audio(alertSound);
+      audio.play().catch(() => {});
+      setLastAlertIds(ids);
+    }
+  }, [recentAlerts, lastAlertIds]);
 
   return (
     <AdminLayout>

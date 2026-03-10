@@ -27,7 +27,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { adminApi, type ApiBeautician, type ApiCity, type ApiVendor } from "@/lib/api";
+import { adminApi, type ApiBeautician, type ApiCity, type ApiVendor, type LiveBeautician } from "@/lib/api";
+import { LiveMap } from "@/components/dashboard/LiveMap";
 
 const Beauticians = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,6 +39,11 @@ const Beauticians = () => {
   const [vendors, setVendors] = useState<ApiVendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [selectedBeautician, setSelectedBeautician] = useState<ApiBeautician | null>(null);
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [trackBeauticians, setTrackBeauticians] = useState<LiveBeautician[]>([]);
+  const [trackLoading, setTrackLoading] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -75,6 +81,28 @@ const Beauticians = () => {
   const onlineCount = beauticians.filter((b) => b.status === "online").length;
   const busyCount = beauticians.filter((b) => b.status === "busy").length;
   const avgRating = beauticians.length ? (beauticians.reduce((sum, b) => sum + b.rating, 0) / beauticians.length).toFixed(1) : "0";
+
+  const handleOpenProfile = (beautician: ApiBeautician) => {
+    setSelectedBeautician(beautician);
+    setProfileOpen(true);
+  };
+
+  const handleTrackLocation = async (beauticianId: string) => {
+    setTrackLoading(true);
+    setTrackBeauticians([]);
+    try {
+      const res = await adminApi.getDashboard();
+      if (res.success && res.data?.liveBeauticians) {
+        const match = res.data.liveBeauticians.find((b) => b.id === beauticianId);
+        if (match) {
+          setTrackBeauticians([match]);
+        }
+      }
+    } finally {
+      setTrackLoading(false);
+      setTrackOpen(true);
+    }
+  };
 
   const handleAddBeautician = async () => {
     if (!newName.trim() || !newEmail.trim() || !newVendorId) return;
@@ -353,11 +381,11 @@ const Beauticians = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenProfile(beautician)}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Profile
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleTrackLocation(beautician.id)}>
                             <MapPin className="h-4 w-4 mr-2" />
                             Track Location
                           </DropdownMenuItem>
@@ -370,6 +398,89 @@ const Beauticians = () => {
             </tbody>
           </table>
         </div>
+
+        {/* View Profile dialog */}
+        <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Beautician Profile</DialogTitle>
+              <DialogDescription>Overview of beautician details and performance.</DialogDescription>
+            </DialogHeader>
+            {selectedBeautician && (
+              <div className="space-y-4 py-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-accent-foreground font-semibold text-base">
+                    {selectedBeautician.name.split(" ").map((n) => n[0]).join("")}
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-foreground">{selectedBeautician.name}</p>
+                    <p className="text-xs text-muted-foreground">{selectedBeautician.phone}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-card rounded-lg border border-border p-3">
+                    <p className="text-xs text-muted-foreground mb-1">City</p>
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                      {selectedBeautician.city || "—"}
+                    </p>
+                  </div>
+                  <div className="bg-card rounded-lg border border-border p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Vendor</p>
+                    <p className="text-sm font-medium text-foreground">{selectedBeautician.vendor || "—"}</p>
+                  </div>
+                  <div className="bg-card rounded-lg border border-border p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Total Services</p>
+                    <p className="text-lg font-bold text-foreground">{selectedBeautician.services}</p>
+                  </div>
+                  <div className="bg-card rounded-lg border border-border p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Completed Today</p>
+                    <p className="text-lg font-bold text-foreground">{selectedBeautician.completedToday}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-warning fill-warning" />
+                    <span className="text-sm font-semibold text-foreground">{selectedBeautician.rating}</span>
+                  </div>
+                  <span
+                    className={cn(
+                      "status-badge",
+                      selectedBeautician.status === "online" && "online",
+                      selectedBeautician.status === "busy" && "busy",
+                      selectedBeautician.status === "offline" && "offline"
+                    )}
+                  >
+                    {selectedBeautician.status === "online"
+                      ? "Online"
+                      : selectedBeautician.status === "busy"
+                        ? "In Service"
+                        : "Offline"}
+                  </span>
+                </div>
+            </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Track Location dialog */}
+        <Dialog open={trackOpen} onOpenChange={setTrackOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Track Beautician Location</DialogTitle>
+              <DialogDescription>Live location is available only when beautician is sharing their location.</DialogDescription>
+            </DialogHeader>
+            {trackLoading ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Loading live location...</div>
+            ) : trackBeauticians.length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No recent location data for this beautician. They need to have an active appointment with location sharing enabled.
+              </div>
+            ) : (
+              <LiveMap beauticians={trackBeauticians} />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
