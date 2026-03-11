@@ -5,7 +5,9 @@ import {
   MapPin,
   Store,
   Users,
+  UserCircle,
   Scissors,
+  ListChecks,
   BarChart3,
   Bell,
   Settings,
@@ -28,7 +30,8 @@ const navigation = [
   { name: "Cities", href: "/cities", icon: MapPin },
   { name: "Vendors", href: "/vendors", icon: Store },
   { name: "Beauticians", href: "/beauticians", icon: Scissors },
-  { name: "Services", href: "/services", icon: Users },
+  { name: "Users", href: "/users", icon: UserCircle },
+  { name: "Services", href: "/services", icon: ListChecks },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Alerts", href: "/alerts", icon: Bell },
 ];
@@ -148,6 +151,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <h1 className="text-lg font-semibold text-foreground">
               {navigation.find((n) => n.href === location.pathname)?.name ||
                 secondaryNavigation.find((n) => n.href === location.pathname)?.name ||
+                (location.pathname.startsWith("/beauticians/") ? "Beautician profile" : null) ||
+                (location.pathname.startsWith("/users/") ? "User profile" : null) ||
                 "Dashboard"}
             </h1>
           </div>

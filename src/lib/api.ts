@@ -138,6 +138,53 @@ export interface ApiBeautician {
   completedToday: number;
 }
 
+export interface ApiBeauticianDetail {
+  id: string;
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  cityId?: string;
+  vendor: string;
+  vendorId: string;
+  totalJobs: number;
+  totalEarnings: number;
+  walletBalance: number;
+  rating: number;
+  expertise?: string[];
+  experienceYears: number;
+  isAvailable: boolean;
+  inProgressCount: number;
+  completedToday: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiUser {
+  id: string;
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  city: string;
+  isActive: boolean;
+  totalBookings?: number;
+  totalJobs?: number;
+  totalSpent?: number;
+  rating?: number;
+  walletBalance?: number;
+  createdAt: string;
+}
+
+export interface ApiUserDetail extends ApiUser {
+  totalBookings?: number;
+  totalSpent?: number;
+  updatedAt: string;
+}
+
 export interface ApiAlert {
   id: string;
   type: "critical" | "warning" | "info";
@@ -223,8 +270,20 @@ export const adminApi = {
     request<{ items: ApiBeautician[]; meta: { page: number; limit: number; total: number } }>("/admin/beauticians", {
       params: { page: String(page), limit: String(limit), search, cityId },
     }),
+  getBeauticianById: (id: string) =>
+    request<ApiBeauticianDetail>(`/admin/beauticians/${id}`),
+  updateBeautician: (id: string, body: { name?: string; phone?: string; password?: string; rating?: number; walletBalance?: number; isActive?: boolean; expertise?: string[]; experienceYears?: number; isAvailable?: boolean }) =>
+    request<ApiBeauticianDetail>(`/admin/beauticians/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   createBeautician: (body: { name: string; email: string; password?: string; phone?: string; vendorId: string; cityId?: string }) =>
     request<ApiBeautician>("/admin/beauticians", { method: "POST", body: JSON.stringify(body) }),
+  getUsers: (page = 1, limit = 50, search = "", role = "") =>
+    request<{ items: ApiUser[]; meta: { page: number; limit: number; total: number } }>("/admin/users", {
+      params: { page: String(page), limit: String(limit), search, ...(role ? { role } : {}) },
+    }),
+  getUserById: (id: string) =>
+    request<ApiUserDetail | ApiBeauticianDetail>(`/admin/users/${id}`),
+  updateUser: (id: string, body: { name?: string; phone?: string; password?: string; isActive?: boolean }) =>
+    request<ApiUserDetail | ApiBeauticianDetail>(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   getAlerts: () => request<ApiAlert[]>("/admin/alerts"),
   getReports: (from?: string, to?: string) => {
     const params: Record<string, string> = {};

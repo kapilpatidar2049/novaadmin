@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Search, Scissors, Eye, MoreHorizontal, MapPin, Phone, Star } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { adminApi, type ApiBeautician, type ApiCity, type ApiVendor, type LiveBe
 import { LiveMap } from "@/components/dashboard/LiveMap";
 
 const Beauticians = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -39,8 +41,6 @@ const Beauticians = () => {
   const [vendors, setVendors] = useState<ApiVendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [selectedBeautician, setSelectedBeautician] = useState<ApiBeautician | null>(null);
   const [trackOpen, setTrackOpen] = useState(false);
   const [trackBeauticians, setTrackBeauticians] = useState<LiveBeautician[]>([]);
   const [trackLoading, setTrackLoading] = useState(false);
@@ -81,11 +81,6 @@ const Beauticians = () => {
   const onlineCount = beauticians.filter((b) => b.status === "online").length;
   const busyCount = beauticians.filter((b) => b.status === "busy").length;
   const avgRating = beauticians.length ? (beauticians.reduce((sum, b) => sum + b.rating, 0) / beauticians.length).toFixed(1) : "0";
-
-  const handleOpenProfile = (beautician: ApiBeautician) => {
-    setSelectedBeautician(beautician);
-    setProfileOpen(true);
-  };
 
   const handleTrackLocation = async (beauticianId: string) => {
     setTrackLoading(true);
@@ -381,9 +376,9 @@ const Beauticians = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenProfile(beautician)}>
+                          <DropdownMenuItem onClick={() => navigate(`/beauticians/${beautician.id}`)}>
                             <Eye className="h-4 w-4 mr-2" />
-                            View Profile
+                            View full profile
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleTrackLocation(beautician.id)}>
                             <MapPin className="h-4 w-4 mr-2" />
@@ -398,70 +393,6 @@ const Beauticians = () => {
             </tbody>
           </table>
         </div>
-
-        {/* View Profile dialog */}
-        <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Beautician Profile</DialogTitle>
-              <DialogDescription>Overview of beautician details and performance.</DialogDescription>
-            </DialogHeader>
-            {selectedBeautician && (
-              <div className="space-y-4 py-2">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-accent-foreground font-semibold text-base">
-                    {selectedBeautician.name.split(" ").map((n) => n[0]).join("")}
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold text-foreground">{selectedBeautician.name}</p>
-                    <p className="text-xs text-muted-foreground">{selectedBeautician.phone}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-card rounded-lg border border-border p-3">
-                    <p className="text-xs text-muted-foreground mb-1">City</p>
-                    <p className="text-sm font-medium text-foreground flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-muted-foreground" />
-                      {selectedBeautician.city || "—"}
-                    </p>
-                  </div>
-                  <div className="bg-card rounded-lg border border-border p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Vendor</p>
-                    <p className="text-sm font-medium text-foreground">{selectedBeautician.vendor || "—"}</p>
-                  </div>
-                  <div className="bg-card rounded-lg border border-border p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Total Services</p>
-                    <p className="text-lg font-bold text-foreground">{selectedBeautician.services}</p>
-                  </div>
-                  <div className="bg-card rounded-lg border border-border p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Completed Today</p>
-                    <p className="text-lg font-bold text-foreground">{selectedBeautician.completedToday}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-warning fill-warning" />
-                    <span className="text-sm font-semibold text-foreground">{selectedBeautician.rating}</span>
-                  </div>
-                  <span
-                    className={cn(
-                      "status-badge",
-                      selectedBeautician.status === "online" && "online",
-                      selectedBeautician.status === "busy" && "busy",
-                      selectedBeautician.status === "offline" && "offline"
-                    )}
-                  >
-                    {selectedBeautician.status === "online"
-                      ? "Online"
-                      : selectedBeautician.status === "busy"
-                        ? "In Service"
-                        : "Offline"}
-                  </span>
-                </div>
-            </div>
-            )}
-          </DialogContent>
-        </Dialog>
 
         {/* Track Location dialog */}
         <Dialog open={trackOpen} onOpenChange={setTrackOpen}>

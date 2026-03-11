@@ -10,6 +10,9 @@ import Dashboard from "./pages/Dashboard";
 import Cities from "./pages/Cities";
 import Vendors from "./pages/Vendors";
 import Beauticians from "./pages/Beauticians";
+import BeauticianDetail from "./pages/BeauticianDetail";
+import Users from "./pages/Users";
+import UserDetail from "./pages/UserDetail";
 import Services from "./pages/Services";
 import Reports from "./pages/Reports";
 import Alerts from "./pages/Alerts";
@@ -39,6 +42,9 @@ const App = () => (
               <Route path="/cities" element={<ProtectedRoute><Cities /></ProtectedRoute>} />
               <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
               <Route path="/beauticians" element={<ProtectedRoute><Beauticians /></ProtectedRoute>} />
+              <Route path="/beauticians/:id" element={<ProtectedRoute><BeauticianDetail /></ProtectedRoute>} />
+              <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+              <Route path="/users/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
               <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
