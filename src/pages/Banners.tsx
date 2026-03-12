@@ -225,7 +225,7 @@ const Banners = () => {
                         <ImageIcon className="h-12 w-12 text-muted-foreground" />
                       </div>
                     )}
-                </div>
+                  </div>
                   <div className="p-3 flex items-center justify-between">
                     <div>
                       <p className="font-medium text-foreground">{banner.title}</p>
@@ -253,7 +253,6 @@ const Banners = () => {
                     </DropdownMenu>
                   </div>
                 </div>
-              </div>
               ))}
             </div>
           )}
