@@ -20,6 +20,7 @@ import Reports from "./pages/Reports";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Appointments from "./pages/Appointments";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/beauticians/:id" element={<ProtectedRoute><BeauticianDetail /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
               <Route path="/users/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
+              <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
               <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
               <Route path="/banners" element={<ProtectedRoute><Banners /></ProtectedRoute>} />
               <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />

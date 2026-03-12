@@ -242,6 +242,28 @@ export interface DashboardData {
   topVendors?: TopVendor[];
 }
 
+export interface ApiAppointmentSummary {
+  id: string;
+  status: string;
+  price: number;
+  scheduledAt: string;
+  createdAt: string;
+  customer: {
+    id?: string;
+    name: string;
+    phone: string;
+  };
+  beautician: {
+    id: string;
+    name: string;
+    phone: string;
+  } | null;
+  service: {
+    id?: string;
+    name: string;
+  };
+}
+
 export const adminApi = {
   getDashboard: () => request<DashboardData>("/admin/dashboard"),
   getCities: (page = 1, limit = 50, search = "") =>
@@ -376,4 +398,14 @@ export const adminApi = {
     if (to) params.to = to;
     return request<{ payments: unknown[] }>("/admin/reports", { params });
   },
+  getAppointments: (page = 1, limit = 50, status = "", customerId = "", beauticianId = "") =>
+    request<{ items: ApiAppointmentSummary[]; meta: { page: number; limit: number; total: number } }>("/admin/appointments", {
+      params: {
+        page: String(page),
+        limit: String(limit),
+        status,
+        customerId,
+        beauticianId,
+      },
+    }),
 };
