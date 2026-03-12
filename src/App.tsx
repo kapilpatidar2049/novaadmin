@@ -14,6 +14,8 @@ import BeauticianDetail from "./pages/BeauticianDetail";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
 import Services from "./pages/Services";
+import Banners from "./pages/Banners";
+import Categories from "./pages/Categories";
 import Reports from "./pages/Reports";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
@@ -46,6 +48,8 @@ const App = () => (
               <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
               <Route path="/users/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
               <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+              <Route path="/banners" element={<ProtectedRoute><Banners /></ProtectedRoute>} />
+              <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

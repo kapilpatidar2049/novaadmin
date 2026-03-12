@@ -113,10 +113,27 @@ export interface ApiVendor {
   isActive?: boolean;
 }
 
+export interface ApiBanner {
+  _id: string;
+  title: string;
+  imageUrl: string;
+  link?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+export interface ApiCategory {
+  _id: string;
+  name: string;
+  imageUrl?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
 export interface ApiService {
   _id: string;
   name: string;
-  category?: string;
+  category?: ApiCategory | string | null;
   description?: string;
   imageUrl?: string;
   basePrice: number;
@@ -247,6 +264,60 @@ export const adminApi = {
     request<ApiVendor>(`/admin/vendors/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteVendor: (id: string) =>
     request(`/admin/vendors/${id}`, { method: "DELETE" }),
+  getBanners: (page = 1, limit = 100) =>
+    request<{ items: ApiBanner[]; meta: { page: number; limit: number; total: number } }>("/admin/banners", {
+      params: { page: String(page), limit: String(limit) },
+    }),
+  createBanner: (body: { title: string; link?: string; order?: number; isActive?: boolean; imageFile?: File | null }) => {
+    const form = new FormData();
+    form.append("title", body.title);
+    if (body.link != null) form.append("link", body.link);
+    if (body.order != null) form.append("order", String(body.order));
+    if (body.isActive != null) form.append("isActive", String(body.isActive));
+    if (body.imageFile) form.append("image", body.imageFile);
+    return request<ApiBanner>("/admin/banners", { method: "POST", body: form });
+  },
+  updateBanner: (id: string, body: { title?: string; link?: string; order?: number; isActive?: boolean; imageFile?: File | null }) => {
+    if (body.imageFile) {
+      const form = new FormData();
+      if (body.title !== undefined) form.append("title", body.title);
+      if (body.link !== undefined) form.append("link", body.link ?? "");
+      if (body.order !== undefined) form.append("order", String(body.order));
+      if (body.isActive !== undefined) form.append("isActive", String(body.isActive));
+      form.append("image", body.imageFile);
+      return request<ApiBanner>(`/admin/banners/${id}`, { method: "PUT", body: form });
+    }
+    const { imageFile: _, ...rest } = body;
+    return request<ApiBanner>(`/admin/banners/${id}`, { method: "PUT", body: JSON.stringify(rest) });
+  },
+  deleteBanner: (id: string) =>
+    request(`/admin/banners/${id}`, { method: "DELETE" }),
+  getCategories: (page = 1, limit = 100, search = "") =>
+    request<{ items: ApiCategory[]; meta: { page: number; limit: number; total: number } }>("/admin/categories", {
+      params: { page: String(page), limit: String(limit), search },
+    }),
+  createCategory: (body: { name: string; order?: number; isActive?: boolean; imageFile?: File | null }) => {
+    const form = new FormData();
+    form.append("name", body.name);
+    if (body.order != null) form.append("order", String(body.order));
+    if (body.isActive != null) form.append("isActive", String(body.isActive));
+    if (body.imageFile) form.append("image", body.imageFile);
+    return request<ApiCategory>("/admin/categories", { method: "POST", body: form });
+  },
+  updateCategory: (id: string, body: { name?: string; order?: number; isActive?: boolean; imageFile?: File | null }) => {
+    if (body.imageFile) {
+      const form = new FormData();
+      if (body.name !== undefined) form.append("name", body.name);
+      if (body.order !== undefined) form.append("order", String(body.order));
+      if (body.isActive !== undefined) form.append("isActive", String(body.isActive));
+      form.append("image", body.imageFile);
+      return request<ApiCategory>(`/admin/categories/${id}`, { method: "PUT", body: form });
+    }
+    const { imageFile: _, ...rest } = body;
+    return request<ApiCategory>(`/admin/categories/${id}`, { method: "PUT", body: JSON.stringify(rest) });
+  },
+  deleteCategory: (id: string) =>
+    request(`/admin/categories/${id}`, { method: "DELETE" }),
   getServices: (page = 1, limit = 50, search = "") =>
     request<{ items: ApiService[]; meta: { page: number; limit: number; total: number } }>("/admin/services", {
       params: { page: String(page), limit: String(limit), search },
@@ -262,8 +333,22 @@ export const adminApi = {
     if (body.imageFile) form.append("image", body.imageFile);
     return request<ApiService>("/admin/services", { method: "POST", body: form });
   },
-  updateService: (id: string, body: { name?: string; category?: string; description?: string; imageUrl?: string; basePrice?: number; durationMinutes?: number; isActive?: boolean }) =>
-    request<ApiService>(`/admin/services/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  updateService: (id: string, body: { name?: string; category?: string; description?: string; imageUrl?: string; basePrice?: number; durationMinutes?: number; isActive?: boolean; imageFile?: File | null }) => {
+    if (body.imageFile) {
+      const form = new FormData();
+      if (body.name !== undefined) form.append("name", body.name);
+      if (body.category !== undefined) form.append("category", body.category);
+      if (body.description !== undefined) form.append("description", body.description);
+      if (body.imageUrl !== undefined) form.append("imageUrl", body.imageUrl);
+      if (body.basePrice !== undefined) form.append("basePrice", String(body.basePrice));
+      if (body.durationMinutes !== undefined) form.append("durationMinutes", String(body.durationMinutes));
+      if (body.isActive !== undefined) form.append("isActive", String(body.isActive));
+      form.append("image", body.imageFile);
+      return request<ApiService>(`/admin/services/${id}`, { method: "PUT", body: form });
+    }
+    const { imageFile: _, ...rest } = body;
+    return request<ApiService>(`/admin/services/${id}`, { method: "PUT", body: JSON.stringify(rest) });
+  },
   deleteService: (id: string) =>
     request(`/admin/services/${id}`, { method: "DELETE" }),
   getBeauticians: (page = 1, limit = 100, search = "", cityId = "") =>

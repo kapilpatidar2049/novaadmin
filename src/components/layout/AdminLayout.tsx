@@ -14,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  ImageIcon,
+  FolderOpen,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,8 @@ const navigation = [
   { name: "Vendors", href: "/vendors", icon: Store },
   { name: "Beauticians", href: "/beauticians", icon: Scissors },
   { name: "Users", href: "/users", icon: UserCircle },
+  { name: "Banners", href: "/banners", icon: ImageIcon },
+  { name: "Categories", href: "/categories", icon: FolderOpen },
   { name: "Services", href: "/services", icon: ListChecks },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Alerts", href: "/alerts", icon: Bell },
