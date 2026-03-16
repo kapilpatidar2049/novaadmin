@@ -29,16 +29,22 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { adminApi, type ApiService, type ApiCategory } from "@/lib/api";
+import { DataTable } from "@/components/common/DataTable";
 
 const Services = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [services, setServices] = useState<ApiService[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [total, setTotal] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newIncludes, setNewIncludes] = useState("");
+  const [newExperts, setNewExperts] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [newPrice, setNewPrice] = useState("");
@@ -50,6 +56,8 @@ const Services = () => {
   const [editName, setEditName] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  const [editIncludes, setEditIncludes] = useState("");
+  const [editExperts, setEditExperts] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editPrice, setEditPrice] = useState("");
@@ -59,10 +67,13 @@ const Services = () => {
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
-    const res = await adminApi.getServices(1, 100, searchQuery);
-    if (res.success && res.data?.items) setServices(res.data.items);
+    const res = await adminApi.getServices(page, pageSize, searchQuery);
+    if (res.success && res.data?.items) {
+      setServices(res.data.items);
+      setTotal(res.data.meta.total);
+    }
     setLoading(false);
-  }, [searchQuery]);
+  }, [searchQuery, page]);
 
   const fetchCategories = useCallback(async () => {
     const res = await adminApi.getCategories(1, 100, "");
@@ -81,11 +92,21 @@ const Services = () => {
     const price = Number(newPrice);
     const duration = Number(newDuration);
     if (!newName.trim() || !price || !duration) return;
+    const includes = newIncludes
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const experts = newExperts
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
     setSaving(true);
     const res = await adminApi.createService({
       name: newName.trim(),
       category: newCategory.trim() || undefined,
       description: newDesc.trim() || undefined,
+      includes: includes.length ? includes : undefined,
+      experts: experts.length ? experts : undefined,
       imageUrl: newImageUrl.trim() || undefined,
       imageFile: newImageFile,
       basePrice: price,
@@ -96,6 +117,8 @@ const Services = () => {
       setNewName("");
       setNewCategory("");
       setNewDesc("");
+      setNewIncludes("");
+      setNewExperts("");
       setNewImageUrl("");
       setNewImageFile(null);
       setNewPrice("");
@@ -113,6 +136,8 @@ const Services = () => {
       typeof cat === "object" && cat && "_id" in cat ? cat._id : typeof cat === "string" ? cat : ""
     );
     setEditDesc(service.description || "");
+    setEditIncludes((service.includes || []).join("\n"));
+    setEditExperts((service.experts || []).join("\n"));
     setEditImageUrl(service.imageUrl || "");
     setEditImageFile(null);
     setEditPrice(String(service.basePrice));
@@ -126,12 +151,22 @@ const Services = () => {
     const price = editPrice.trim() ? Number(editPrice) : undefined;
     const duration = editDuration.trim() ? Number(editDuration) : undefined;
     if (!editName.trim()) return;
+    const includes = editIncludes
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const experts = editExperts
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
     setEditSaving(true);
     try {
       const payload: Parameters<typeof adminApi.updateService>[1] = {
         name: editName.trim(),
         category: editCategory.trim() || undefined,
         description: editDesc.trim() || undefined,
+        includes: includes.length ? includes : undefined,
+        experts: experts.length ? experts : undefined,
         imageFile: editImageFile || undefined,
         basePrice: price,
         durationMinutes: duration,
@@ -196,8 +231,28 @@ const Services = () => {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Input id="description" placeholder="Optional" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
+                  <Label htmlFor="description">About</Label>
+                  <Input id="description" placeholder="Short description about this service" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="includes">What's Included (one per line)</Label>
+                  <textarea
+                    id="includes"
+                    className="min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder={"e.g. Hair styling\nMakeup\nDraping"}
+                    value={newIncludes}
+                    onChange={(e) => setNewIncludes(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="experts">Our Experts (one per line)</Label>
+                  <textarea
+                    id="experts"
+                    className="min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder={"e.g. Senior Makeup Artist\nHair Stylist\nSkin Specialist"}
+                    value={newExperts}
+                    onChange={(e) => setNewExperts(e.target.value)}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="imageUrl">Service Image</Label>
@@ -299,99 +354,106 @@ const Services = () => {
           </div>
         </div>
 
-        {/* Services Table */}
-        <div className="data-table-container">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Service
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Category
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Base Price
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Duration
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Status
-                </th>
-                <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">Loading...</td></tr>
-              ) : (
-                filteredServices.map((service) => (
-                <tr key={service._id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Scissors className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="font-medium text-foreground">{service.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">
-                    {typeof service.category === "object" && service.category && "name" in service.category
-                      ? service.category.name
-                      : "-"}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">₹{service.basePrice}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground">{service.durationMinutes} min</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={cn(
-                        "status-badge",
-                        service.isActive !== false ? "online" : "offline"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "w-1.5 h-1.5 rounded-full",
-                          service.isActive !== false ? "bg-success" : "bg-muted-foreground"
-                        )}
-                      />
-                      {service.isActive !== false ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(service)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Service
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable<ApiService>
+          columns={[
+            {
+              key: "service",
+              header: "Service",
+              render: (service) => (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Scissors className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="font-medium text-foreground">{service.name}</span>
+                </div>
+              ),
+            },
+            {
+              key: "category",
+              header: "Category",
+              render: (service) => (
+                <span className="text-sm text-muted-foreground">
+                  {typeof service.category === "object" &&
+                  service.category &&
+                  "name" in service.category
+                    ? service.category.name
+                    : "-"}
+                </span>
+              ),
+            },
+            {
+              key: "price",
+              header: "Base Price",
+              render: (service) => (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">
+                    ₹{service.basePrice}
+                  </span>
+                </div>
+              ),
+            },
+            {
+              key: "duration",
+              header: "Duration",
+              render: (service) => (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground">
+                    {service.durationMinutes} min
+                  </span>
+                </div>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (service) => (
+                <span
+                  className={cn(
+                    "status-badge",
+                    service.isActive !== false ? "online" : "offline"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      service.isActive !== false ? "bg-success" : "bg-muted-foreground"
+                    )}
+                  />
+                  {service.isActive !== false ? "Active" : "Inactive"}
+                </span>
+              ),
+            },
+            {
+              key: "actions",
+              header: <span className="flex justify-end">Actions</span>,
+              className: "text-right",
+              render: (service) => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDialog(service)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Service
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ),
+            },
+          ]}
+          items={filteredServices}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          emptyMessage="No services found."
+        />
 
         {/* Edit Service Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) setEditingService(null); }}>
@@ -423,8 +485,26 @@ const Services = () => {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="editDescription">Description</Label>
-                  <Input id="editDescription" placeholder="Optional" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+                  <Label htmlFor="editDescription">About</Label>
+                  <Input id="editDescription" placeholder="Short description about this service" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="editIncludes">What's Included (one per line)</Label>
+                  <textarea
+                    id="editIncludes"
+                    className="min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={editIncludes}
+                    onChange={(e) => setEditIncludes(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="editExperts">Our Experts (one per line)</Label>
+                  <textarea
+                    id="editExperts"
+                    className="min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={editExperts}
+                    onChange={(e) => setEditExperts(e.target.value)}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label>Service Image</Label>

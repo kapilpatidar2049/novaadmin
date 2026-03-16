@@ -28,6 +28,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { adminApi, type ApiVendor, type ApiCity } from "@/lib/api";
+import { DataTable } from "@/components/common/DataTable";
 
 const Vendors = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,6 +36,9 @@ const Vendors = () => {
   const [vendors, setVendors] = useState<ApiVendor[]>([]);
   const [cities, setCities] = useState<ApiCity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [total, setTotal] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -42,13 +46,18 @@ const Vendors = () => {
   const [newCityId, setNewCityId] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [saving, setSaving] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<ApiVendor | null>(null);
 
   const fetchVendors = useCallback(async () => {
     setLoading(true);
-    const res = await adminApi.getVendors(1, 100, searchQuery, cityFilter === "all" ? "" : cityFilter);
-    if (res.success && res.data?.items) setVendors(res.data.items);
+    const res = await adminApi.getVendors(page, pageSize, searchQuery, cityFilter === "all" ? "" : cityFilter);
+    if (res.success && res.data?.items) {
+      setVendors(res.data.items);
+      setTotal(res.data.meta.total);
+    }
     setLoading(false);
-  }, [cityFilter, searchQuery]);
+  }, [cityFilter, searchQuery, page]);
 
   useEffect(() => {
     fetchVendors();
@@ -190,71 +199,133 @@ const Vendors = () => {
           </Select>
         </div>
 
-        {/* Vendors Table */}
-        <div className="data-table-container">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Vendor
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  City
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Status
-                </th>
-                <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">Loading...</td></tr>
-              ) : (
-                filteredVendors.map((vendor) => (
-                  <tr key={vendor._id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium text-sm">
-                          {vendor.name.split(" ").map((n) => n[0]).join("")}
-                        </div>
-                        <span className="font-medium text-foreground">{vendor.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-muted-foreground">
-                        {typeof vendor.city === "object" ? vendor.city?.name : vendor.city}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn("status-badge", vendor.isActive !== false ? "online" : "offline")}>
-                        <span className={cn("w-1.5 h-1.5 rounded-full", vendor.isActive !== false ? "bg-success" : "bg-muted-foreground")} />
-                        {vendor.isActive !== false ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable<ApiVendor>
+          columns={[
+            {
+              key: "vendor",
+              header: "Vendor",
+              render: (vendor) => (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium text-sm">
+                    {vendor.name.split(" ").map((n) => n[0]).join("")}
+                  </div>
+                  <span className="font-medium text-foreground">{vendor.name}</span>
+                </div>
+              ),
+            },
+            {
+              key: "city",
+              header: "City",
+              render: (vendor) => (
+                <span className="text-sm text-muted-foreground">
+                  {typeof vendor.city === "object" ? (vendor.city as ApiCity)?.name : vendor.city}
+                </span>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (vendor) => (
+                <span className={cn("status-badge", vendor.isActive !== false ? "online" : "offline")}>
+                  <span
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      vendor.isActive !== false ? "bg-success" : "bg-muted-foreground"
+                    )}
+                  />
+                  {vendor.isActive !== false ? "Active" : "Inactive"}
+                </span>
+              ),
+            },
+            {
+              key: "actions",
+              header: <span className="flex justify-end">Actions</span>,
+              className: "text-right",
+              render: (vendor) => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedVendor(vendor);
+                        setViewDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ),
+            },
+          ]}
+          items={filteredVendors}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          emptyMessage="No vendors found."
+        />
+
+        {/* View Vendor Dialog */}
+        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Vendor Details</DialogTitle>
+              <DialogDescription>Overview of vendor information.</DialogDescription>
+            </DialogHeader>
+            {selectedVendor && (
+              <div className="space-y-3 py-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium text-sm">
+                    {selectedVendor.name.split(" ").map((n) => n[0]).join("")}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{selectedVendor.name}</p>
+                    <p className="text-xs text-muted-foreground">{selectedVendor.email}</p>
+                    {selectedVendor.phone && (
+                      <p className="text-xs text-muted-foreground">{selectedVendor.phone}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">City</p>
+                    <p className="font-medium text-foreground">
+                      {typeof selectedVendor.city === "object"
+                        ? selectedVendor.city?.name
+                        : selectedVendor.city || "-"}
+                    </p>
+                  </div>
+                  {selectedVendor.address && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Address</p>
+                      <p className="font-medium text-foreground break-words">
+                        {selectedVendor.address}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <p className="font-medium text-foreground">
+                      {selectedVendor.isActive !== false ? "Active" : "Inactive"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

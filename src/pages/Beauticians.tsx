@@ -29,6 +29,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { adminApi, type ApiBeautician, type ApiCity, type ApiVendor, type LiveBeautician } from "@/lib/api";
+import { DataTable } from "@/components/common/DataTable";
 import { LiveMap } from "@/components/dashboard/LiveMap";
 
 const Beauticians = () => {
@@ -51,13 +52,19 @@ const Beauticians = () => {
   const [newCityId, setNewCityId] = useState("");
   const [newVendorId, setNewVendorId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [total, setTotal] = useState(0);
 
   const fetchBeauticians = useCallback(async () => {
     setLoading(true);
-    const res = await adminApi.getBeauticians(1, 100, searchQuery, cityFilter === "all" ? "" : cityFilter);
-    if (res.success && res.data?.items) setBeauticians(res.data.items);
+    const res = await adminApi.getBeauticians(page, pageSize, searchQuery, cityFilter === "all" ? "" : cityFilter);
+    if (res.success && res.data?.items) {
+      setBeauticians(res.data.items);
+      setTotal(res.data.meta.total);
+    }
     setLoading(false);
-  }, [searchQuery, cityFilter]);
+  }, [searchQuery, cityFilter, page]);
 
   useEffect(() => {
     fetchBeauticians();
@@ -291,108 +298,122 @@ const Beauticians = () => {
           </Select>
         </div>
 
-        <div className="data-table-container">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Beautician</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Location</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Vendor</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Services</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Today</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Rating</th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Status</th>
-                <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">Loading...</td>
-                </tr>
-              ) : (
-                filteredBeauticians.map((beautician) => (
-                  <tr key={beautician.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-accent-foreground font-medium text-sm">
-                          {beautician.name.split(" ").map((n) => n[0]).join("")}
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{beautician.name}</p>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Phone className="h-3 w-3" />
-                            {beautician.phone}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-foreground">{beautician.city}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-muted-foreground">{beautician.vendor}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-foreground">{beautician.services}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-foreground">{beautician.completedToday}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-warning fill-warning" />
-                        <span className="text-sm font-medium text-foreground">{beautician.rating}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={cn(
-                          "status-badge",
-                          beautician.status === "online" && "online",
-                          beautician.status === "busy" && "busy",
-                          beautician.status === "offline" && "offline"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "w-1.5 h-1.5 rounded-full",
-                            beautician.status === "online" && "bg-success",
-                            beautician.status === "busy" && "bg-warning",
-                            beautician.status === "offline" && "bg-muted-foreground"
-                          )}
-                        />
-                        {beautician.status === "online" ? "Online" : beautician.status === "busy" ? "In Service" : "Offline"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => navigate(`/beauticians/${beautician.id}`)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View full profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTrackLocation(beautician.id)}>
-                            <MapPin className="h-4 w-4 mr-2" />
-                            Track Location
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable<ApiBeautician>
+          columns={[
+            {
+              key: "beautician",
+              header: "Beautician",
+              render: (b) => (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-accent-foreground font-medium text-sm">
+                    {b.name.split(" ").map((n) => n[0]).join("")}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{b.name}</p>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Phone className="h-3 w-3" />
+                      {b.phone}
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: "location",
+              header: "Location",
+              render: (b) => (
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground">{b.city}</span>
+                </div>
+              ),
+            },
+            {
+              key: "vendor",
+              header: "Vendor",
+              render: (b) => <span className="text-sm text-muted-foreground">{b.vendor}</span>,
+            },
+            {
+              key: "services",
+              header: "Services",
+              render: (b) => (
+                <span className="text-sm font-medium text-foreground">{b.services}</span>
+              ),
+            },
+            {
+              key: "today",
+              header: "Today",
+              render: (b) => (
+                <span className="text-sm text-foreground">{b.completedToday}</span>
+              ),
+            },
+            {
+              key: "rating",
+              header: "Rating",
+              render: (b) => (
+                <div className="flex items-center gap-1">
+                  <Star className="h-4 w-4 text-warning fill-warning" />
+                  <span className="text-sm font-medium text-foreground">{b.rating}</span>
+                </div>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (b) => (
+                <span
+                  className={cn(
+                    "status-badge",
+                    b.status === "online" && "online",
+                    b.status === "busy" && "busy",
+                    b.status === "offline" && "offline"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      b.status === "online" && "bg-success",
+                      b.status === "busy" && "bg-warning",
+                      b.status === "offline" && "bg-muted-foreground"
+                    )}
+                  />
+                  {b.status === "online" ? "Online" : b.status === "busy" ? "In Service" : "Offline"}
+                </span>
+              ),
+            },
+            {
+              key: "actions",
+              header: <span className="flex justify-end">Actions</span>,
+              className: "text-right",
+              render: (b) => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/beauticians/${b.id}`)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View full profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleTrackLocation(b.id)}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Track Location
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ),
+            },
+          ]}
+          items={filteredBeauticians}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          emptyMessage="No beauticians found."
+        />
 
         {/* Track Location dialog */}
         <Dialog open={trackOpen} onOpenChange={setTrackOpen}>

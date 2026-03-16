@@ -5,6 +5,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adminApi, type ApiAppointmentSummary } from "@/lib/api";
+import { DataTable } from "@/components/common/DataTable";
 
 const statusLabels: Record<string, string> = {
   pending: "Pending",
@@ -30,15 +31,19 @@ const Appointments = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [total, setTotal] = useState(0);
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
-    const res = await adminApi.getAppointments(1, 100, statusFilter === "all" ? "" : statusFilter);
+    const res = await adminApi.getAppointments(page, pageSize, statusFilter === "all" ? "" : statusFilter);
     if (res.success && res.data?.items) {
       setAppointments(res.data.items);
+      setTotal(res.data.meta.total);
     }
     setLoading(false);
-  }, [statusFilter]);
+  }, [statusFilter, page]);
 
   useEffect(() => {
     fetchAppointments();
@@ -100,134 +105,121 @@ const Appointments = () => {
           </div>
         </div>
 
-        <div className="data-table-container">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Appointment
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Customer
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Beautician
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Service
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Scheduled
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Amount
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
-                    Loading appointments...
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
-                    No appointments found.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((appt) => {
-                  const statusKey = appt.status as keyof typeof statusLabels;
-                  const statusLabel = statusLabels[statusKey] || appt.status;
-                  const statusColor = statusColors[statusKey] || "bg-muted text-muted-foreground";
-                  const scheduled = appt.scheduledAt
-                    ? new Date(appt.scheduledAt).toLocaleString()
-                    : "-";
-
-                  return (
-                    <tr
-                      key={appt.id}
-                      className="hover:bg-muted/20 transition-colors cursor-pointer"
-                      onClick={() => {
-                        if (appt.customer.id) {
-                          navigate(`/users/${appt.customer.id}`);
-                        }
-                      }}
-                    >
-                      <td className="px-6 py-4 text-sm text-foreground">
-                        <div className="flex flex-col">
-                          <span className="font-medium truncate max-w-[180px]">
-                            {appt.id}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Created {new Date(appt.createdAt).toLocaleString()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <span className="font-medium">{appt.customer.name || "—"}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {appt.customer.phone || "—"}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
-                          <Scissors className="h-4 w-4 text-muted-foreground" />
-                          {appt.beautician ? (
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {appt.beautician.name || "—"}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {appt.beautician.phone || "—"}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              Not yet assigned
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-foreground">
-                        {appt.service.name || "—"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-foreground">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{scheduled}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-foreground">
-                        <div className="flex items-center gap-1">
-                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-semibold">
-                            {appt.price != null ? appt.price.toLocaleString() : "0"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor}`}>
-                          {statusLabel}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable<ApiAppointmentSummary>
+          columns={[
+            {
+              key: "id",
+              header: "Appointment",
+              render: (appt) => (
+                <div className="flex flex-col">
+                  <span className="font-medium truncate max-w-[180px]">
+                    {appt.id}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Created {new Date(appt.createdAt).toLocaleString()}
+                  </span>
+                </div>
+              ),
+            },
+            {
+              key: "customer",
+              header: "Customer",
+              render: (appt) => (
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{appt.customer.name || "—"}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {appt.customer.phone || "—"}
+                    </span>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: "beautician",
+              header: "Beautician",
+              render: (appt) => (
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Scissors className="h-4 w-4 text-muted-foreground" />
+                  {appt.beautician ? (
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {appt.beautician.name || "—"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {appt.beautician.phone || "—"}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      Not yet assigned
+                    </span>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: "service",
+              header: "Service",
+              render: (appt) => (
+                <span className="text-sm text-foreground">
+                  {appt.service.name || "—"}
+                </span>
+              ),
+            },
+            {
+              key: "scheduled",
+              header: "Scheduled",
+              render: (appt) => {
+                const scheduled = appt.scheduledAt
+                  ? new Date(appt.scheduledAt).toLocaleString()
+                  : "-";
+                return (
+                  <div className="flex items-center gap-2 text-sm text-foreground">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>{scheduled}</span>
+                  </div>
+                );
+              },
+            },
+            {
+              key: "amount",
+              header: "Amount",
+              render: (appt) => (
+                <div className="flex items-center gap-1 text-sm text-foreground">
+                  <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-semibold">
+                    {appt.price != null ? appt.price.toLocaleString() : "0"}
+                  </span>
+                </div>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (appt) => {
+                const statusKey = appt.status as keyof typeof statusLabels;
+                const statusLabel = statusLabels[statusKey] || appt.status;
+                const statusColor = statusColors[statusKey] || "bg-muted text-muted-foreground";
+                return (
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor}`}
+                  >
+                    {statusLabel}
+                  </span>
+                );
+              },
+            },
+          ]}
+          items={filtered}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          emptyMessage="No appointments found."
+        />
       </div>
     </AdminLayout>
   );

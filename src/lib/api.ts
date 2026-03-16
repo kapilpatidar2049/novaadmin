@@ -135,6 +135,8 @@ export interface ApiService {
   name: string;
   category?: ApiCategory | string | null;
   description?: string;
+  includes?: string[];
+  experts?: string[];
   imageUrl?: string;
   basePrice: number;
   durationMinutes: number;
@@ -344,23 +346,27 @@ export const adminApi = {
     request<{ items: ApiService[]; meta: { page: number; limit: number; total: number } }>("/admin/services", {
       params: { page: String(page), limit: String(limit), search },
     }),
-  createService: (body: { name: string; category?: string; description?: string; basePrice: number; durationMinutes: number; imageFile?: File | null; imageUrl?: string }) => {
+  createService: (body: { name: string; category?: string; description?: string; includes?: string[]; experts?: string[]; basePrice: number; durationMinutes: number; imageFile?: File | null; imageUrl?: string }) => {
     const form = new FormData();
     form.append("name", body.name);
     form.append("basePrice", String(body.basePrice));
     form.append("durationMinutes", String(body.durationMinutes));
     if (body.category) form.append("category", body.category);
     if (body.description) form.append("description", body.description);
-    if (body.imageUrl) form.append("imageUrl", body.imageUrl);
+    if (body.includes && body.includes.length) form.append("includes", JSON.stringify(body.includes));
+    if (body.experts && body.experts.length) form.append("experts", JSON.stringify(body.experts));
+    if (body.imageUrl && !body.imageFile) form.append("imageUrl", body.imageUrl);
     if (body.imageFile) form.append("image", body.imageFile);
     return request<ApiService>("/admin/services", { method: "POST", body: form });
   },
-  updateService: (id: string, body: { name?: string; category?: string; description?: string; imageUrl?: string; basePrice?: number; durationMinutes?: number; isActive?: boolean; imageFile?: File | null }) => {
+  updateService: (id: string, body: { name?: string; category?: string; description?: string; includes?: string[]; experts?: string[]; imageUrl?: string; basePrice?: number; durationMinutes?: number; isActive?: boolean; imageFile?: File | null }) => {
     if (body.imageFile) {
       const form = new FormData();
       if (body.name !== undefined) form.append("name", body.name);
       if (body.category !== undefined) form.append("category", body.category);
       if (body.description !== undefined) form.append("description", body.description);
+      if (body.includes !== undefined) form.append("includes", JSON.stringify(body.includes));
+      if (body.experts !== undefined) form.append("experts", JSON.stringify(body.experts));
       if (body.imageUrl !== undefined) form.append("imageUrl", body.imageUrl);
       if (body.basePrice !== undefined) form.append("basePrice", String(body.basePrice));
       if (body.durationMinutes !== undefined) form.append("durationMinutes", String(body.durationMinutes));

@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { DataTable } from "@/components/common/DataTable";
 import { adminApi, type ApiUser } from "@/lib/api";
 
 const Users = () => {
@@ -26,18 +27,24 @@ const Users = () => {
   const [roleFilter, setRoleFilter] = useState("all");
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [total, setTotal] = useState(0);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     const res = await adminApi.getUsers(
-      1,
-      100,
+      page,
+      pageSize,
       searchQuery,
       roleFilter === "all" ? "" : roleFilter
     );
-    if (res.success && res.data?.items) setUsers(res.data.items);
+    if (res.success && res.data?.items) {
+      setUsers(res.data.items);
+      setTotal(res.data.meta.total);
+    }
     setLoading(false);
-  }, [searchQuery, roleFilter]);
+  }, [searchQuery, roleFilter, page]);
 
   useEffect(() => {
     fetchUsers();
@@ -119,116 +126,112 @@ const Users = () => {
           </Select>
         </div>
 
-        <div className="data-table-container">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  User
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Role
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  City
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Bookings / Jobs
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Spent / Earnings
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Status
-                </th>
-                <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
-                    Loading...
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-accent-foreground font-medium text-sm">
-                          {user.name.split(" ").map((n) => n[0]).join("") || "?"}
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{user.name}</p>
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium",
-                          user.role === "beautician"
-                            ? "bg-success/10 text-success"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {user.role === "beautician" ? "Beautician" : "Customer"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-foreground">{user.city || "—"}</td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-foreground">
-                        {user.role === "beautician"
-                          ? (user.totalJobs ?? "—")
-                          : (user.totalBookings ?? 0)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-foreground">
-                        {user.role === "beautician"
-                          ? user.walletBalance != null
-                            ? `₹${user.walletBalance.toLocaleString()}`
-                            : "—"
-                          : user.totalSpent != null
-                            ? `₹${user.totalSpent.toLocaleString()}`
-                            : "—"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={cn(
-                          "status-badge",
-                          user.isActive !== false ? "online" : "offline"
-                        )}
-                      >
-                        {user.isActive !== false ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => navigate(`/users/${user.id}`)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View details
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={[
+            {
+              key: "user",
+              header: "User",
+              render: (user) => (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-accent-foreground font-medium text-sm">
+                    {user.name.split(" ").map((n) => n[0]).join("") || "?"}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: "role",
+              header: "Role",
+              render: (user) => (
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium",
+                    user.role === "beautician"
+                      ? "bg-success/10 text-success"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {user.role === "beautician" ? "Beautician" : "Customer"}
+                </span>
+              ),
+            },
+            {
+              key: "city",
+              header: "City",
+              render: (user) => <span className="text-sm text-foreground">{user.city || "—"}</span>,
+            },
+            {
+              key: "counts",
+              header: "Bookings / Jobs",
+              render: (user) => (
+                <span className="text-sm font-medium text-foreground">
+                  {user.role === "beautician"
+                    ? (user.totalJobs ?? "—")
+                    : (user.totalBookings ?? 0)}
+                </span>
+              ),
+            },
+            {
+              key: "money",
+              header: "Spent / Earnings",
+              render: (user) => (
+                <span className="text-sm font-medium text-foreground">
+                  {user.role === "beautician"
+                    ? user.walletBalance != null
+                      ? `₹${user.walletBalance.toLocaleString()}`
+                      : "—"
+                    : user.totalSpent != null
+                      ? `₹${user.totalSpent.toLocaleString()}`
+                      : "—"}
+                </span>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (user) => (
+                <span
+                  className={cn(
+                    "status-badge",
+                    user.isActive !== false ? "online" : "offline"
+                  )}
+                >
+                  {user.isActive !== false ? "Active" : "Inactive"}
+                </span>
+              ),
+            },
+            {
+              key: "actions",
+              header: <span className="flex justify-end">Actions</span>,
+              className: "text-right",
+              render: (user) => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/users/${user.id}`)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View details
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ),
+            },
+          ]}
+          items={filteredUsers}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+        />
       </div>
     </AdminLayout>
   );

@@ -21,10 +21,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { adminApi, type ApiBanner } from "@/lib/api";
+import { DataTable } from "@/components/common/DataTable";
 
 const Banners = () => {
   const [banners, setBanners] = useState<ApiBanner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [total, setTotal] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newLink, setNewLink] = useState("");
@@ -45,10 +49,13 @@ const Banners = () => {
 
   const fetchBanners = useCallback(async () => {
     setLoading(true);
-    const res = await adminApi.getBanners(1, 100);
-    if (res.success && res.data?.items) setBanners(res.data.items);
+    const res = await adminApi.getBanners(page, pageSize);
+    if (res.success && res.data?.items) {
+      setBanners(res.data.items);
+      setTotal(res.data.meta.total);
+    }
     setLoading(false);
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     fetchBanners();
@@ -201,19 +208,14 @@ const Banners = () => {
           </Dialog>
         </div>
 
-        <div className="data-table-container">
-          {loading ? (
-            <p className="text-muted-foreground py-8 text-center">Loading...</p>
-          ) : banners.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center">No banners yet. Add one above.</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {banners.map((banner) => (
-                <div
-                  key={banner._id}
-                  className="rounded-xl border border-border bg-card overflow-hidden"
-                >
-                  <div className="aspect-[2/1] bg-muted relative">
+        <DataTable<ApiBanner>
+          columns={[
+            {
+              key: "image",
+              header: "Banner",
+              render: (banner) => (
+                <div className="flex items-center gap-3">
+                  <div className="h-16 w-24 rounded-md overflow-hidden bg-muted flex items-center justify-center">
                     {banner.imageUrl ? (
                       <img
                         src={banner.imageUrl}
@@ -221,42 +223,70 @@ const Banners = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                      </div>
+                      <ImageIcon className="h-6 w-6 text-muted-foreground" />
                     )}
                   </div>
-                  <div className="p-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-foreground">{banner.title}</p>
-                      <p className="text-xs text-muted-foreground">Order: {banner.order ?? 0}</p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(banner)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => handleDelete(banner._id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <div>
+                    <p className="font-medium text-foreground">{banner.title}</p>
+                    <p className="text-xs text-muted-foreground">Order: {banner.order ?? 0}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              ),
+            },
+            {
+              key: "link",
+              header: "Link",
+              render: (banner) => (
+                <span className="text-xs text-muted-foreground break-all">
+                  {banner.link || "—"}
+                </span>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (banner) => (
+                <span className="text-xs font-medium text-foreground">
+                  {banner.isActive === false ? "Inactive" : "Active"}
+                </span>
+              ),
+            },
+            {
+              key: "actions",
+              header: <span className="flex justify-end">Actions</span>,
+              render: (banner) => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDialog(banner)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => handleDelete(banner._id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ),
+              className: "text-right",
+            },
+          ]}
+          items={banners}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          emptyMessage="No banners yet. Add one above."
+        />
 
         <Dialog
           open={editDialogOpen}
