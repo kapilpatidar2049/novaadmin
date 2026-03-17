@@ -1,19 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, IndianRupee, User, Scissors, Search, ListFilter, Eye, UserPlus, MapPin } from "lucide-react";
+import { Calendar, IndianRupee, User, Scissors, Search, ListFilter, Eye, MapPin } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { adminApi, type ApiAppointmentSummary, type ApiAppointmentDetail } from "@/lib/api";
+import { adminApi, type ApiAppointmentSummary } from "@/lib/api";
 import { DataTable } from "@/components/common/DataTable";
 
 const statusLabels: Record<string, string> = {
@@ -34,8 +26,6 @@ const statusColors: Record<string, string> = {
   rejected: "bg-muted text-muted-foreground",
 };
 
-const UNASSIGN_VALUE = "__unassign__";
-
 const Appointments = () => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<ApiAppointmentSummary[]>([]);
@@ -46,17 +36,6 @@ const Appointments = () => {
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [total, setTotal] = useState(0);
-
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const [detailData, setDetailData] = useState<ApiAppointmentDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-
-  const [assignOpen, setAssignOpen] = useState(false);
-  const [assignAppointmentId, setAssignAppointmentId] = useState<string | null>(null);
-  const [assignBeauticianId, setAssignBeauticianId] = useState<string>("");
-  const [beauticians, setBeauticians] = useState<{ _id: string; id: string; name: string; phone: string }[]>([]);
-  const [assignLoading, setAssignLoading] = useState(false);
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
@@ -82,60 +61,6 @@ const Appointments = () => {
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
-
-  useEffect(() => {
-    if (!detailId || !detailOpen) return;
-    setDetailLoading(true);
-    adminApi
-      .getAppointmentById(detailId)
-      .then((res) => {
-        if (res.success && res.data) setDetailData(res.data as ApiAppointmentDetail);
-        else setDetailData(null);
-      })
-      .catch(() => setDetailData(null))
-      .finally(() => setDetailLoading(false));
-  }, [detailId, detailOpen]);
-
-  useEffect(() => {
-    if (!assignOpen) return;
-    setAssignLoading(true);
-    adminApi
-      .getBeauticians(1, 50)
-      .then((res) => {
-        if (res.success && res.data?.items) setBeauticians(res.data.items);
-        else setBeauticians([]);
-      })
-      .catch(() => setBeauticians([]))
-      .finally(() => setAssignLoading(false));
-  }, [assignOpen]);
-
-  const openDetail = (id: string) => {
-    setDetailId(id);
-    setDetailOpen(true);
-  };
-
-  const openAssign = (appt: ApiAppointmentSummary) => {
-    setAssignAppointmentId(appt.id);
-    setAssignBeauticianId(appt.beautician?.id ?? UNASSIGN_VALUE);
-    setAssignOpen(true);
-  };
-
-  const handleAssignSave = async () => {
-    if (!assignAppointmentId) return;
-    try {
-      const res = await adminApi.updateAppointment(assignAppointmentId, {
-        beautician: assignBeauticianId && assignBeauticianId !== UNASSIGN_VALUE ? assignBeauticianId : null,
-      });
-      if (res.success) {
-        setAssignOpen(false);
-        setAssignAppointmentId(null);
-        setAssignBeauticianId("");
-        fetchAppointments();
-      }
-    } catch {
-      // error toast could be added
-    }
-  };
 
   const filtered = appointments.filter((a) => {
     if (searchQuery.trim()) {
@@ -323,16 +248,10 @@ const Appointments = () => {
               key: "actions",
               header: "Actions",
               render: (appt) => (
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openDetail(appt.id)}>
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => openAssign(appt)}>
-                    <UserPlus className="h-4 w-4 mr-1" />
-                    Assign
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" onClick={() => navigate(`/appointments/${appt.id}`)}>
+                  <Eye className="h-4 w-4 mr-1" />
+                  View
+                </Button>
               ),
             },
           ]}
@@ -344,103 +263,6 @@ const Appointments = () => {
           onPageChange={setPage}
           emptyMessage="No appointments found."
         />
-
-        <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Appointment details</DialogTitle>
-              <DialogDescription>Full appointment and customer/beautician info</DialogDescription>
-            </DialogHeader>
-            {detailLoading ? (
-              <p className="text-sm text-muted-foreground py-4">Loading...</p>
-            ) : detailData ? (
-              <div className="grid gap-4 py-2">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <span className="text-muted-foreground">ID</span>
-                  <span className="font-mono truncate">{detailData.id}</span>
-                  <span className="text-muted-foreground">Status</span>
-                  <span>{statusLabels[detailData.status] ?? detailData.status}</span>
-                  <span className="text-muted-foreground">Scheduled</span>
-                  <span>{detailData.scheduledAt ? new Date(detailData.scheduledAt).toLocaleString() : "—"}</span>
-                  <span className="text-muted-foreground">Amount</span>
-                  <span>₹{detailData.price?.toLocaleString() ?? "0"}</span>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Address</p>
-                  <p className="text-sm">{detailData.address || "—"}</p>
-                </div>
-                {detailData.notes && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Notes</p>
-                    <p className="text-sm">{detailData.notes}</p>
-                  </div>
-                )}
-                <div className="border-t pt-3 space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Customer</p>
-                  <p className="text-sm font-medium">{detailData.customer.name || "—"}</p>
-                  <p className="text-xs text-muted-foreground">{detailData.customer.phone || "—"}</p>
-                  {"email" in detailData.customer && detailData.customer.email && (
-                    <p className="text-xs text-muted-foreground">{detailData.customer.email}</p>
-                  )}
-                </div>
-                <div className="border-t pt-3 space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Beautician</p>
-                  {detailData.beautician ? (
-                    <>
-                      <p className="text-sm font-medium">{detailData.beautician.name || "—"}</p>
-                      <p className="text-xs text-muted-foreground">{detailData.beautician.phone || "—"}</p>
-                      {detailData.distanceInKm != null && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {detailData.distanceInKm} km from service location
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Not assigned</p>
-                  )}
-                </div>
-                <div className="border-t pt-3">
-                  <p className="text-xs font-medium text-muted-foreground">Service</p>
-                  <p className="text-sm">{detailData.service?.name || "—"}</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground py-4">Could not load details.</p>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={assignOpen} onOpenChange={(open) => { setAssignOpen(open); if (!open) setAssignAppointmentId(null); }}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Assign beautician</DialogTitle>
-              <DialogDescription>Select a beautician for this appointment. Leave empty to unassign.</DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              {assignLoading ? (
-                <p className="text-sm text-muted-foreground">Loading beauticians...</p>
-              ) : (
-                <Select value={assignBeauticianId || UNASSIGN_VALUE} onValueChange={setAssignBeauticianId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select beautician" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={UNASSIGN_VALUE}>Unassign</SelectItem>
-                    {beauticians.map((b) => (
-                      <SelectItem key={b._id} value={b.id ?? b._id}>
-                        {b.name} {b.phone ? `(${b.phone})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button>
-              <Button onClick={handleAssignSave} disabled={assignLoading}>Save</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </AdminLayout>
   );

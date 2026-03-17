@@ -159,6 +159,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 secondaryNavigation.find((n) => n.href === location.pathname)?.name ||
                 (location.pathname.startsWith("/beauticians/") ? "Beautician profile" : null) ||
                 (location.pathname.startsWith("/users/") ? "User profile" : null) ||
+                (location.pathname.startsWith("/appointments/") ? "Appointment details" : null) ||
                 "Dashboard"}
             </h1>
           </div>
