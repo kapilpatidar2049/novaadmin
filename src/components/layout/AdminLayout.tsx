@@ -16,6 +16,7 @@ import {
   LogOut,
   ImageIcon,
   FolderOpen,
+  CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ interface AdminLayoutProps {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Appointments", href: "/appointments", icon: CalendarCheck },
   { name: "Cities", href: "/cities", icon: MapPin },
   { name: "Vendors", href: "/vendors", icon: Store },
   { name: "Beauticians", href: "/beauticians", icon: Scissors },

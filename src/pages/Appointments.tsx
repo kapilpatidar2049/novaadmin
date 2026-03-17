@@ -31,18 +31,30 @@ const Appointments = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [total, setTotal] = useState(0);
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
-    const res = await adminApi.getAppointments(page, pageSize, statusFilter === "all" ? "" : statusFilter);
-    if (res.success && res.data?.items) {
-      setAppointments(res.data.items);
-      setTotal(res.data.meta.total);
+    setError(null);
+    try {
+      const res = await adminApi.getAppointments(page, pageSize, statusFilter === "all" ? "" : statusFilter);
+      if (res.success && res.data?.items) {
+        setAppointments(res.data.items);
+        setTotal(res.data.meta?.total ?? res.data.items.length);
+      } else {
+        setAppointments([]);
+        setTotal(0);
+      }
+    } catch (e) {
+      setAppointments([]);
+      setTotal(0);
+      setError(e instanceof Error ? e.message : "Failed to load appointments. Check that the API URL is correct (e.g. VITE_API_URL in .env).");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [statusFilter, page]);
 
   useEffect(() => {
@@ -104,6 +116,12 @@ const Appointments = () => {
             </Select>
           </div>
         </div>
+
+        {error && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
         <DataTable<ApiAppointmentSummary>
           columns={[
