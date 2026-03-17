@@ -34,6 +34,8 @@ const statusColors: Record<string, string> = {
   rejected: "bg-muted text-muted-foreground",
 };
 
+const UNASSIGN_VALUE = "__unassign__";
+
 const Appointments = () => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<ApiAppointmentSummary[]>([]);
@@ -114,7 +116,7 @@ const Appointments = () => {
 
   const openAssign = (appt: ApiAppointmentSummary) => {
     setAssignAppointmentId(appt.id);
-    setAssignBeauticianId(appt.beautician?.id ?? "");
+    setAssignBeauticianId(appt.beautician?.id ?? UNASSIGN_VALUE);
     setAssignOpen(true);
   };
 
@@ -122,7 +124,7 @@ const Appointments = () => {
     if (!assignAppointmentId) return;
     try {
       const res = await adminApi.updateAppointment(assignAppointmentId, {
-        beautician: assignBeauticianId || null,
+        beautician: assignBeauticianId && assignBeauticianId !== UNASSIGN_VALUE ? assignBeauticianId : null,
       });
       if (res.success) {
         setAssignOpen(false);
@@ -418,12 +420,12 @@ const Appointments = () => {
               {assignLoading ? (
                 <p className="text-sm text-muted-foreground">Loading beauticians...</p>
               ) : (
-                <Select value={assignBeauticianId} onValueChange={setAssignBeauticianId}>
+                <Select value={assignBeauticianId || UNASSIGN_VALUE} onValueChange={setAssignBeauticianId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select beautician" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassign</SelectItem>
+                    <SelectItem value={UNASSIGN_VALUE}>Unassign</SelectItem>
                     {beauticians.map((b) => (
                       <SelectItem key={b._id} value={b.id ?? b._id}>
                         {b.name} {b.phone ? `(${b.phone})` : ""}
