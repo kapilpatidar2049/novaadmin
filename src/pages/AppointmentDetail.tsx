@@ -59,7 +59,7 @@ const AppointmentDetail = () => {
 
   useEffect(() => {
     adminApi
-      .getBeauticians(1, 200)
+      .getBeauticians(1, 50)
       .then((res) => {
         if (res.success && res.data?.items) {
           // Show only currently available (online or busy) beauticians in the assign dropdown
