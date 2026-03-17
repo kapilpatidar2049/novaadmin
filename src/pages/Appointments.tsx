@@ -98,7 +98,7 @@ const Appointments = () => {
     if (!assignOpen) return;
     setAssignLoading(true);
     adminApi
-      .getBeauticians(1, 200)
+      .getBeauticians(1, 50)
       .then((res) => {
         if (res.success && res.data?.items) setBeauticians(res.data.items);
         else setBeauticians([]);
