@@ -250,6 +250,7 @@ export interface ApiAppointmentSummary {
   price: number;
   scheduledAt: string;
   createdAt: string;
+  address?: string;
   customer: {
     id?: string;
     name: string;
@@ -264,6 +265,13 @@ export interface ApiAppointmentSummary {
     id?: string;
     name: string;
   };
+  distanceInKm?: number | null;
+}
+
+export interface ApiAppointmentDetail extends ApiAppointmentSummary {
+  notes?: string;
+  customer: ApiAppointmentSummary["customer"] & { email?: string };
+  beautician: (ApiAppointmentSummary["beautician"] & { email?: string }) | null;
 }
 
 export const adminApi = {
@@ -414,4 +422,8 @@ export const adminApi = {
         beauticianId,
       },
     }),
+  getAppointmentById: (id: string) =>
+    request<ApiAppointmentDetail>("/admin/appointments/" + id),
+  updateAppointment: (id: string, body: { beautician?: string | null }) =>
+    request<ApiAppointmentDetail>(`/admin/appointments/${id}`, { method: "PUT", body: JSON.stringify(body) }),
 };
