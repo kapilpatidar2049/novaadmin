@@ -61,11 +61,22 @@ const AppointmentDetail = () => {
     adminApi
       .getBeauticians(1, 200)
       .then((res) => {
-        if (res.success && res.data?.items) setBeauticians(res.data.items);
-        else setBeauticians([]);
+        if (res.success && res.data?.items) {
+          // Show only currently available (online or busy) beauticians in the assign dropdown
+          const available = res.data.items.filter((b) => b.status === "online" || b.status === "busy");
+          setBeauticians(available);
+        } else {
+          setBeauticians([]);
+        }
       })
       .catch(() => setBeauticians([]));
   }, []);
+
+  const beauticianLabel = (b: ApiBeautician) => {
+    const status =
+      b.status === "online" ? "Online" : b.status === "busy" ? "In Service" : "Offline";
+    return `${b.name}${b.phone ? ` (${b.phone})` : ""} • ${status}`;
+  };
 
   const handleSaveAssign = async () => {
     if (!id) return;
@@ -226,7 +237,7 @@ const AppointmentDetail = () => {
                   <SelectItem value={UNASSIGN_VALUE}>Unassign</SelectItem>
                   {beauticians.map((b) => (
                     <SelectItem key={b._id} value={b.id ?? b._id}>
-                      {b.name} {b.phone ? `(${b.phone})` : ""}
+                      {beauticianLabel(b)}
                     </SelectItem>
                   ))}
                 </SelectContent>
