@@ -14,6 +14,9 @@ import {
   Calendar,
   Loader2,
   Save,
+  Shield,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -35,6 +38,10 @@ const BeauticianDetail = () => {
   const [editWallet, setEditWallet] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [editActive, setEditActive] = useState(true);
+  const [kycStatus, setKycStatus] = useState<"pending" | "approved" | "rejected">("pending");
+  const [docEdits, setDocEdits] = useState<Record<string, { status: "pending" | "approved" | "rejected"; notes: string }>>(
+    {}
+  );
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -49,6 +56,12 @@ const BeauticianDetail = () => {
           setEditRating(String(res.data.rating ?? 0));
           setEditWallet(String(res.data.walletBalance ?? 0));
           setEditActive(res.data.isActive !== false);
+          setKycStatus(res.data.kycStatus || "pending");
+          const initialDocs: Record<string, { status: "pending" | "approved" | "rejected"; notes: string }> = {};
+          (res.data.documents || []).forEach((d) => {
+            initialDocs[d.id] = { status: d.status, notes: d.notes || "" };
+          });
+          setDocEdits(initialDocs);
         }
       })
       .catch(() => setDetail(null))
@@ -66,6 +79,12 @@ const BeauticianDetail = () => {
         rating: editRating.trim() ? Math.min(5, Math.max(0, Number(editRating))) : undefined,
         walletBalance: editWallet.trim() ? Math.max(0, Number(editWallet)) : undefined,
         isActive: editActive,
+        kycStatus,
+        documents: Object.entries(docEdits).map(([id, v]) => ({
+          id,
+          status: v.status,
+          notes: v.notes,
+        })),
       };
       if (newPassword.trim()) body.password = newPassword.trim();
       const res = await adminApi.updateBeautician(id, body);
@@ -73,6 +92,12 @@ const BeauticianDetail = () => {
         setDetail(res.data);
         setEditWallet(String(res.data.walletBalance ?? 0));
         setNewPassword("");
+        setKycStatus(res.data.kycStatus || "pending");
+        const updatedDocs: Record<string, { status: "pending" | "approved" | "rejected"; notes: string }> = {};
+        (res.data.documents || []).forEach((d) => {
+          updatedDocs[d.id] = { status: d.status, notes: d.notes || "" };
+        });
+        setDocEdits(updatedDocs);
         setMessage({ type: "success", text: "Saved successfully." });
       }
     } catch (e) {
@@ -213,6 +238,45 @@ const BeauticianDetail = () => {
               </li>
             </ul>
           </div>
+          <div className="bg-card rounded-lg border border-border p-4 space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-4 w-4 text-primary" />
+              <h3 className="font-medium text-foreground">KYC status</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              {kycStatus === "approved" ? (
+                <CheckCircle2 className="h-4 w-4 text-success" />
+              ) : kycStatus === "rejected" ? (
+                <XCircle className="h-4 w-4 text-destructive" />
+              ) : (
+                <Loader2 className="h-4 w-4 text-warning" />
+              )}
+              <span className="text-sm text-foreground font-medium">{kycStatus.toUpperCase()}</span>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Button
+                size="sm"
+                variant={kycStatus === "approved" ? "default" : "outline"}
+                onClick={() => setKycStatus("approved")}
+              >
+                Approve KYC
+              </Button>
+              <Button
+                size="sm"
+                variant={kycStatus === "rejected" ? "default" : "outline"}
+                onClick={() => setKycStatus("rejected")}
+              >
+                Reject KYC
+              </Button>
+              <Button
+                size="sm"
+                variant={kycStatus === "pending" ? "default" : "outline"}
+                onClick={() => setKycStatus("pending")}
+              >
+                Mark pending
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Edit form */}
@@ -274,9 +338,92 @@ const BeauticianDetail = () => {
             Save changes
           </Button>
         </div>
+
+        {/* KYC documents review */}
+        {detail.documents && detail.documents.length > 0 && (
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h3 className="font-medium text-foreground">KYC documents</h3>
+            <p className="text-xs text-muted-foreground">
+              Review each document, set status to Approved / Rejected, and optionally add a rejection note. Changes are saved when you click "Save changes" above.
+            </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              {detail.documents.map((doc) => {
+                const current = docEdits[doc.id] || { status: doc.status, notes: doc.notes || "" };
+                return (
+                  <div key={doc.id} className="border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground uppercase">{doc.type}</span>
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-medium",
+                          current.status === "approved"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : current.status === "rejected"
+                            ? "bg-red-50 text-red-700"
+                            : "bg-amber-50 text-amber-700"
+                        )}
+                      >
+                        {current.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block text-xs text-primary hover:underline truncate"
+                    >
+                      View document
+                    </a>
+                    <div className="flex gap-2 mt-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() =>
+                          setDocEdits((prev) => ({
+                            ...prev,
+                            [doc.id]: { ...(prev[doc.id] || current), status: "approved" },
+                          }))
+                        }
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() =>
+                          setDocEdits((prev) => ({
+                            ...prev,
+                            [doc.id]: { ...(prev[doc.id] || current), status: "rejected" },
+                          }))
+                        }
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                    <div className="mt-2">
+                      <Label className="text-[11px] text-muted-foreground">Notes (shown to beautician)</Label>
+                      <Input
+                        className="mt-1 h-8 text-xs"
+                        value={current.notes}
+                        onChange={(e) =>
+                          setDocEdits((prev) => ({
+                            ...prev,
+                            [doc.id]: { ...(prev[doc.id] || current), notes: e.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
-};
+}; 
 
 export default BeauticianDetail;

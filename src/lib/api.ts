@@ -177,6 +177,14 @@ export interface ApiBeauticianDetail {
   inProgressCount: number;
   completedToday: number;
   isActive: boolean;
+  kycStatus?: "pending" | "approved" | "rejected";
+  documents?: Array<{
+    id: string;
+    type: string;
+    url: string;
+    status: "pending" | "approved" | "rejected";
+    notes: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -393,7 +401,7 @@ export const adminApi = {
     }),
   getBeauticianById: (id: string) =>
     request<ApiBeauticianDetail>(`/admin/beauticians/${id}`),
-  updateBeautician: (id: string, body: { name?: string; phone?: string; password?: string; rating?: number; walletBalance?: number; isActive?: boolean; expertise?: string[]; experienceYears?: number; isAvailable?: boolean }) =>
+  updateBeautician: (id: string, body: { name?: string; phone?: string; password?: string; rating?: number; walletBalance?: number; isActive?: boolean; expertise?: string[]; experienceYears?: number; isAvailable?: boolean; kycStatus?: "pending" | "approved" | "rejected"; documents?: Array<{ id: string; status?: "pending" | "approved" | "rejected"; notes?: string }> }) =>
     request<ApiBeauticianDetail>(`/admin/beauticians/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   createBeautician: (body: { name: string; email: string; password?: string; phone?: string; vendorId: string; cityId?: string }) =>
     request<ApiBeautician>("/admin/beauticians", { method: "POST", body: JSON.stringify(body) }),
