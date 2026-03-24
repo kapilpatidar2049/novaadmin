@@ -226,6 +226,7 @@ export interface ApiPayment {
   id: string;
   amount: number;
   status: "pending" | "paid" | "failed" | "refunded";
+  paymentType?: "appointment" | "wallet_recharge";
   customerName: string;
   beauticianName: string;
   vendorName: string;
