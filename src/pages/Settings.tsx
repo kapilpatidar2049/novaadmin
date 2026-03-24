@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Shield, Lock, Eye, Globe } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,37 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 const Settings = () => {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [settings, setSettings] = useState({
+    twoFactorAuth: false,
+    sessionTimeout: true,
+    loginNotifications: true,
+    criticalAlerts: true,
+    dailySummary: true,
+    vendorRegistrationAlerts: false,
+  });
+
+  useEffect(() => {
+    const raw = localStorage.getItem("admin_settings");
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      setSettings((prev) => ({ ...prev, ...parsed }));
+    } catch {
+      // ignore invalid local storage state
+    }
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaved(false);
+    await new Promise((r) => setTimeout(r, 250));
+    localStorage.setItem("admin_settings", JSON.stringify(settings));
+    setSaving(false);
+    setSaved(true);
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-4xl">
@@ -37,7 +69,10 @@ const Settings = () => {
                   Add an extra layer of security to your account
                 </p>
               </div>
-              <Switch />
+              <Switch
+                checked={settings.twoFactorAuth}
+                onCheckedChange={(v) => setSettings((p) => ({ ...p, twoFactorAuth: v }))}
+              />
             </div>
 
             <Separator />
@@ -49,7 +84,10 @@ const Settings = () => {
                   Automatically log out after 30 minutes of inactivity
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.sessionTimeout}
+                onCheckedChange={(v) => setSettings((p) => ({ ...p, sessionTimeout: v }))}
+              />
             </div>
 
             <Separator />
@@ -61,7 +99,10 @@ const Settings = () => {
                   Receive email alerts for new login attempts
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.loginNotifications}
+                onCheckedChange={(v) => setSettings((p) => ({ ...p, loginNotifications: v }))}
+              />
             </div>
           </div>
         </div>
@@ -127,7 +168,10 @@ const Settings = () => {
                   Receive immediate notifications for critical issues
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.criticalAlerts}
+                onCheckedChange={(v) => setSettings((p) => ({ ...p, criticalAlerts: v }))}
+              />
             </div>
 
             <Separator />
@@ -139,7 +183,10 @@ const Settings = () => {
                   Get a daily digest of all activities
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.dailySummary}
+                onCheckedChange={(v) => setSettings((p) => ({ ...p, dailySummary: v }))}
+              />
             </div>
 
             <Separator />
@@ -151,14 +198,20 @@ const Settings = () => {
                   Notify when new vendors register
                 </p>
               </div>
-              <Switch />
+              <Switch
+                checked={settings.vendorRegistrationAlerts}
+                onCheckedChange={(v) => setSettings((p) => ({ ...p, vendorRegistrationAlerts: v }))}
+              />
             </div>
           </div>
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end">
-          <Button>Save Changes</Button>
+        <div className="flex justify-end items-center gap-3">
+          {saved && <p className="text-sm text-green-600">Settings saved.</p>}
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </div>
     </AdminLayout>

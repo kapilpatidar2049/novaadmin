@@ -23,6 +23,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { adminApi, type ApiBeauticianDetail } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +45,10 @@ const BeauticianDetail = () => {
   const [editWallet, setEditWallet] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [editActive, setEditActive] = useState(true);
+  const [editCityId, setEditCityId] = useState("");
+  const [editVendorId, setEditVendorId] = useState("");
+  const [cities, setCities] = useState<Array<{ _id: string; name: string }>>([]);
+  const [vendors, setVendors] = useState<Array<{ _id: string; name: string }>>([]);
   const [kycStatus, setKycStatus] = useState<"pending" | "approved" | "rejected">("pending");
   const [docEdits, setDocEdits] = useState<Record<string, { status: "pending" | "approved" | "rejected"; notes: string }>>(
     {}
@@ -55,6 +66,8 @@ const BeauticianDetail = () => {
           setEditPhone(res.data.phone || "");
           setEditRating(String(res.data.rating ?? 0));
           setEditWallet(String(res.data.walletBalance ?? 0));
+          setEditCityId(res.data.cityId || "");
+          setEditVendorId(res.data.vendorId || "");
           setEditActive(res.data.isActive !== false);
           setKycStatus(res.data.kycStatus || "pending");
           const initialDocs: Record<string, { status: "pending" | "approved" | "rejected"; notes: string }> = {};
@@ -68,6 +81,15 @@ const BeauticianDetail = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    adminApi.getCities(1, 200).then((res) => {
+      if (res.success && res.data?.items) setCities(res.data.items.map((c) => ({ _id: c._id, name: c.name })));
+    }).catch(() => {});
+    adminApi.getVendors(1, 200).then((res) => {
+      if (res.success && res.data?.items) setVendors(res.data.items.map((v) => ({ _id: v._id, name: v.name })));
+    }).catch(() => {});
+  }, []);
+
   const handleSave = async () => {
     if (!id || !detail) return;
     setSaving(true);
@@ -79,6 +101,8 @@ const BeauticianDetail = () => {
         rating: editRating.trim() ? Math.min(5, Math.max(0, Number(editRating))) : undefined,
         walletBalance: editWallet.trim() ? Math.max(0, Number(editWallet)) : undefined,
         isActive: editActive,
+        cityId: editCityId || undefined,
+        vendorId: editVendorId || undefined,
         kycStatus,
         documents: Object.entries(docEdits).map(([id, v]) => ({
           id,
@@ -295,6 +319,36 @@ const BeauticianDetail = () => {
             <div className="grid gap-2">
               <Label htmlFor="editPhone">Phone</Label>
               <Input id="editPhone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label>City</Label>
+              <Select value={editCityId} onValueChange={setEditCityId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select city" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((c) => (
+                    <SelectItem key={c._id} value={c._id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Vendor</Label>
+              <Select value={editVendorId} onValueChange={setEditVendorId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors.map((v) => (
+                    <SelectItem key={v._id} value={v._id}>
+                      {v.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="editRating">Rating (0–5)</Label>

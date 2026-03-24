@@ -93,12 +93,9 @@ const Beauticians = () => {
     setTrackLoading(true);
     setTrackBeauticians([]);
     try {
-      const res = await adminApi.getDashboard();
-      if (res.success && res.data?.liveBeauticians) {
-        const match = res.data.liveBeauticians.find((b) => b.id === beauticianId);
-        if (match) {
-          setTrackBeauticians([match]);
-        }
+      const res = await adminApi.getBeauticianLiveLocation(beauticianId);
+      if (res.success && res.data) {
+        setTrackBeauticians([res.data]);
       }
     } finally {
       setTrackLoading(false);

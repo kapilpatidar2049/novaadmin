@@ -40,19 +40,25 @@ const Reports = () => {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([adminApi.getReports(from, to), adminApi.getDashboard()]).then(([reportRes, dashRes]) => {
-      if (reportRes.success && reportRes.data && "payments" in reportRes.data) {
-        const payments = (reportRes.data as { payments: Array<{ _id: string; totalAmount: number; count: number }> }).payments || [];
-        setPaymentsByStatus(payments);
-      }
-      if (dashRes.success && dashRes.data) {
-        setDashboard({
-          totalPaidPayments: dashRes.data.totalPaidPayments,
-          topVendors: dashRes.data.topVendors?.map((v) => ({ name: v.name, revenue: v.revenue })),
-        });
-      }
-      setLoading(false);
-    });
+    Promise.all([adminApi.getReports(from, to), adminApi.getDashboard()])
+      .then(([reportRes, dashRes]) => {
+        if (reportRes.success && reportRes.data && "payments" in reportRes.data) {
+          const payments = (reportRes.data as { payments: Array<{ _id: string; totalAmount: number; count: number }> }).payments || [];
+          setPaymentsByStatus(payments);
+        } else {
+          setPaymentsByStatus([]);
+        }
+        if (dashRes.success && dashRes.data) {
+          setDashboard({
+            totalPaidPayments: dashRes.data.totalPaidPayments,
+            topVendors: dashRes.data.topVendors?.map((v) => ({ name: v.name, revenue: v.revenue })),
+          });
+        }
+      })
+      .catch(() => {
+        setPaymentsByStatus([]);
+      })
+      .finally(() => setLoading(false));
   }, [from, to]);
 
   const totalPaid = paymentsByStatus.find((p) => p._id === "paid")?.totalAmount ?? 0;

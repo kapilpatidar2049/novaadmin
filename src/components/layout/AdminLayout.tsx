@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,12 +17,14 @@ import {
   ImageIcon,
   FolderOpen,
   CalendarCheck,
+  CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { adminApi } from "@/lib/api";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -39,6 +41,7 @@ const navigation = [
   { name: "Categories", href: "/categories", icon: FolderOpen },
   { name: "Services", href: "/services", icon: ListChecks },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Payments", href: "/payments", icon: CreditCard },
   { name: "Alerts", href: "/alerts", icon: Bell },
 ];
 
@@ -48,9 +51,18 @@ const secondaryNavigation = [
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    adminApi.getAlerts().then((res) => {
+      if (res.success && Array.isArray(res.data)) {
+        setUnreadAlerts(res.data.filter((a) => !a.read).length);
+      }
+    }).catch(() => {});
+  }, [location.pathname]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -164,11 +176,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/alerts")} title="Open alerts">
               <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
-                3
-              </span>
+              {unreadAlerts > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
+                  {unreadAlerts > 99 ? "99+" : unreadAlerts}
+                </span>
+              )}
             </Button>
             <Separator orientation="vertical" className="h-8" />
             <div className="flex items-center gap-3">

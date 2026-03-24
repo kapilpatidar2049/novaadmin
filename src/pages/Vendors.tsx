@@ -31,6 +31,7 @@ import { adminApi, type ApiVendor, type ApiCity } from "@/lib/api";
 import { DataTable } from "@/components/common/DataTable";
 
 const Vendors = () => {
+  const vendorPanelBaseUrl = import.meta.env.VITE_VENDOR_PANEL_URL || "";
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [vendors, setVendors] = useState<ApiVendor[]>([]);
@@ -315,6 +316,23 @@ const Vendors = () => {
                     <p className="font-medium text-foreground">
                       {selectedVendor.isActive !== false ? "Active" : "Inactive"}
                     </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Vendor Panel</p>
+                    {vendorPanelBaseUrl ? (
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto"
+                        onClick={() => {
+                          const url = `${vendorPanelBaseUrl.replace(/\/$/, "")}/?vendor=${selectedVendor._id}`;
+                          window.open(url, "_blank", "noopener,noreferrer");
+                        }}
+                      >
+                        Open vendor panel
+                      </Button>
+                    ) : (
+                      <p className="font-medium text-foreground">Not configured (`VITE_VENDOR_PANEL_URL`)</p>
+                    )}
                   </div>
                 </div>
               </div>

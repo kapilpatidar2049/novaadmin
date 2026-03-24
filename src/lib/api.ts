@@ -222,6 +222,18 @@ export interface ApiAlert {
   read?: boolean;
 }
 
+export interface ApiPayment {
+  id: string;
+  amount: number;
+  status: "pending" | "paid" | "failed" | "refunded";
+  customerName: string;
+  beauticianName: string;
+  vendorName: string;
+  providerOrderId: string;
+  providerPaymentId: string;
+  createdAt: string;
+}
+
 export interface LiveBeautician {
   id: string;
   name: string;
@@ -401,8 +413,10 @@ export const adminApi = {
     }),
   getBeauticianById: (id: string) =>
     request<ApiBeauticianDetail>(`/admin/beauticians/${id}`),
-  updateBeautician: (id: string, body: { name?: string; phone?: string; password?: string; rating?: number; walletBalance?: number; isActive?: boolean; expertise?: string[]; experienceYears?: number; isAvailable?: boolean; kycStatus?: "pending" | "approved" | "rejected"; documents?: Array<{ id: string; status?: "pending" | "approved" | "rejected"; notes?: string }> }) =>
+  updateBeautician: (id: string, body: { name?: string; phone?: string; password?: string; rating?: number; walletBalance?: number; isActive?: boolean; expertise?: string[]; experienceYears?: number; isAvailable?: boolean; cityId?: string; vendorId?: string; kycStatus?: "pending" | "approved" | "rejected"; documents?: Array<{ id: string; status?: "pending" | "approved" | "rejected"; notes?: string }> }) =>
     request<ApiBeauticianDetail>(`/admin/beauticians/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  getBeauticianLiveLocation: (id: string) =>
+    request<LiveBeautician | null>(`/admin/beauticians/${id}/live-location`),
   createBeautician: (body: { name: string; email: string; password?: string; phone?: string; vendorId: string; cityId?: string }) =>
     request<ApiBeautician>("/admin/beauticians", { method: "POST", body: JSON.stringify(body) }),
   getUsers: (page = 1, limit = 50, search = "", role = "") =>
@@ -414,6 +428,10 @@ export const adminApi = {
   updateUser: (id: string, body: { name?: string; phone?: string; password?: string; isActive?: boolean }) =>
     request<ApiUserDetail | ApiBeauticianDetail>(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   getAlerts: () => request<ApiAlert[]>("/admin/alerts"),
+  getPayments: (page = 1, limit = 50, status = "") =>
+    request<{ items: ApiPayment[]; meta: { page: number; limit: number; total: number } }>("/admin/payments", {
+      params: { page: String(page), limit: String(limit), status },
+    }),
   getReports: (from?: string, to?: string) => {
     const params: Record<string, string> = {};
     if (from) params.from = from;
