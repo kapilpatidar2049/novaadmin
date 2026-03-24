@@ -32,8 +32,11 @@ import {
 } from "@/components/ui/select";
 import { adminApi, type ApiBeauticianDetail } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BeauticianDetail = () => {
+  const { isVendor } = useAuth();
+  const readOnly = isVendor;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ApiBeauticianDetail | null>(null);
@@ -82,16 +85,17 @@ const BeauticianDetail = () => {
   }, [id]);
 
   useEffect(() => {
+    if (isVendor) return;
     adminApi.getCities(1, 200).then((res) => {
       if (res.success && res.data?.items) setCities(res.data.items.map((c) => ({ _id: c._id, name: c.name })));
     }).catch(() => {});
     adminApi.getVendors(1, 200).then((res) => {
       if (res.success && res.data?.items) setVendors(res.data.items.map((v) => ({ _id: v._id, name: v.name })));
     }).catch(() => {});
-  }, []);
+  }, [isVendor]);
 
   const handleSave = async () => {
-    if (!id || !detail) return;
+    if (readOnly || !id || !detail) return;
     setSaving(true);
     setMessage(null);
     try {
@@ -164,6 +168,12 @@ const BeauticianDetail = () => {
             Back to Beauticians
           </Button>
         </div>
+
+        {readOnly && (
+          <p className="text-sm rounded-md border border-border bg-muted/30 px-3 py-2 text-muted-foreground">
+            View-only: super admin can edit beautician profiles and KYC.
+          </p>
+        )}
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -282,6 +292,7 @@ const BeauticianDetail = () => {
                 size="sm"
                 variant={kycStatus === "approved" ? "default" : "outline"}
                 onClick={() => setKycStatus("approved")}
+                disabled={readOnly}
               >
                 Approve KYC
               </Button>
@@ -289,6 +300,7 @@ const BeauticianDetail = () => {
                 size="sm"
                 variant={kycStatus === "rejected" ? "default" : "outline"}
                 onClick={() => setKycStatus("rejected")}
+                disabled={readOnly}
               >
                 Reject KYC
               </Button>
@@ -296,6 +308,7 @@ const BeauticianDetail = () => {
                 size="sm"
                 variant={kycStatus === "pending" ? "default" : "outline"}
                 onClick={() => setKycStatus("pending")}
+                disabled={readOnly}
               >
                 Mark pending
               </Button>
@@ -314,15 +327,15 @@ const BeauticianDetail = () => {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="editName">Name</Label>
-              <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} />
+              <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="editPhone">Phone</Label>
-              <Input id="editPhone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              <Input id="editPhone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label>City</Label>
-              <Select value={editCityId} onValueChange={setEditCityId}>
+              <Select value={editCityId} onValueChange={setEditCityId} disabled={readOnly}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select city" />
                 </SelectTrigger>
@@ -337,7 +350,7 @@ const BeauticianDetail = () => {
             </div>
             <div className="grid gap-2">
               <Label>Vendor</Label>
-              <Select value={editVendorId} onValueChange={setEditVendorId}>
+              <Select value={editVendorId} onValueChange={setEditVendorId} disabled={readOnly}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>
@@ -360,6 +373,7 @@ const BeauticianDetail = () => {
                 step={0.1}
                 value={editRating}
                 onChange={(e) => setEditRating(e.target.value)}
+                disabled={readOnly}
               />
             </div>
             <div className="grid gap-2">
@@ -370,6 +384,7 @@ const BeauticianDetail = () => {
                 min={0}
                 value={editWallet}
                 onChange={(e) => setEditWallet(e.target.value)}
+                disabled={readOnly}
               />
             </div>
             <div className="grid gap-2 sm:col-span-2">
@@ -380,17 +395,20 @@ const BeauticianDetail = () => {
                 placeholder="••••••••"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                disabled={readOnly}
               />
             </div>
             <div className="flex items-center gap-2 sm:col-span-2">
-              <Switch id="editActive" checked={editActive} onCheckedChange={setEditActive} />
+              <Switch id="editActive" checked={editActive} onCheckedChange={setEditActive} disabled={readOnly} />
               <Label htmlFor="editActive">Active (can log in and receive bookings)</Label>
             </div>
           </div>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Save changes
-          </Button>
+          {!readOnly && (
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save changes
+            </Button>
+          )}
         </div>
 
         {/* KYC documents review */}
@@ -398,7 +416,7 @@ const BeauticianDetail = () => {
           <div className="bg-card rounded-lg border border-border p-6 space-y-4">
             <h3 className="font-medium text-foreground">KYC documents</h3>
             <p className="text-xs text-muted-foreground">
-              Review each document, set status to Approved / Rejected, and optionally add a rejection note. Changes are saved when you click "Save changes" above.
+              Review each document, then save. You must click save below (or &quot;Save changes&quot; in the form above) or your approvals will not be stored.
             </p>
             <div className="grid gap-4 md:grid-cols-3">
               {detail.documents.map((doc) => {
@@ -433,6 +451,7 @@ const BeauticianDetail = () => {
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs"
+                        disabled={readOnly}
                         onClick={() =>
                           setDocEdits((prev) => ({
                             ...prev,
@@ -446,6 +465,7 @@ const BeauticianDetail = () => {
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs"
+                        disabled={readOnly}
                         onClick={() =>
                           setDocEdits((prev) => ({
                             ...prev,
@@ -461,6 +481,7 @@ const BeauticianDetail = () => {
                       <Input
                         className="mt-1 h-8 text-xs"
                         value={current.notes}
+                        disabled={readOnly}
                         onChange={(e) =>
                           setDocEdits((prev) => ({
                             ...prev,
@@ -473,6 +494,12 @@ const BeauticianDetail = () => {
                 );
               })}
             </div>
+            {!readOnly && (
+              <Button onClick={handleSave} disabled={saving} className="mt-2">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save document changes
+              </Button>
+            )}
           </div>
         )}
       </div>

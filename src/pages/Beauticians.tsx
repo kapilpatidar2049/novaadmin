@@ -31,8 +31,10 @@ import { cn } from "@/lib/utils";
 import { adminApi, type ApiBeautician, type ApiCity, type ApiVendor, type LiveBeautician } from "@/lib/api";
 import { DataTable } from "@/components/common/DataTable";
 import { LiveMap } from "@/components/dashboard/LiveMap";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Beauticians = () => {
+  const { isVendor } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
@@ -71,13 +73,14 @@ const Beauticians = () => {
   }, [fetchBeauticians]);
 
   useEffect(() => {
+    if (isVendor) return;
     adminApi.getCities(1, 100).then((res) => {
       if (res.success && res.data?.items) setCities(res.data.items);
     });
     adminApi.getVendors(1, 100).then((res) => {
       if (res.success && res.data?.items) setVendors(res.data.items);
     });
-  }, []);
+  }, [isVendor]);
 
   const cityOptions = cities.map((c) => ({ value: c._id, label: c.name }));
   const filteredBeauticians = beauticians.filter((b) => {
@@ -138,6 +141,7 @@ const Beauticians = () => {
             <h1 className="page-title">Beautician Management</h1>
             <p className="page-description">Track and manage all beauticians across cities</p>
           </div>
+          {!isVendor && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -206,6 +210,7 @@ const Beauticians = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -269,19 +274,21 @@ const Beauticians = () => {
               className="pl-9"
             />
           </div>
-          <Select value={cityFilter} onValueChange={setCityFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by city" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Cities</SelectItem>
-              {cityOptions.map((c) => (
-                <SelectItem key={c.value} value={c.value}>
-                  {c.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!isVendor && (
+            <Select value={cityFilter} onValueChange={setCityFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by city" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cities</SelectItem>
+                {cityOptions.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />

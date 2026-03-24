@@ -20,12 +20,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { adminApi, type ApiUserDetail, type ApiBeauticianDetail } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 function isBeauticianDetail(d: ApiUserDetail | ApiBeauticianDetail): d is ApiBeauticianDetail {
   return "totalEarnings" in d && "totalJobs" in d;
 }
 
 const UserDetail = () => {
+  const { isVendor } = useAuth();
+  const readOnly = isVendor;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ApiUserDetail | ApiBeauticianDetail | null>(null);
@@ -54,7 +57,7 @@ const UserDetail = () => {
   }, [id]);
 
   const handleSave = async () => {
-    if (!id || !detail) return;
+    if (readOnly || !id || !detail) return;
     setSaving(true);
     setMessage(null);
     try {
@@ -112,6 +115,12 @@ const UserDetail = () => {
             Back to Users
           </Button>
         </div>
+
+        {readOnly && (
+          <p className="text-sm rounded-md border border-border bg-muted/30 px-3 py-2 text-muted-foreground">
+            View-only: super admin can edit users and passwords.
+          </p>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-accent-foreground font-bold text-xl">
@@ -231,11 +240,11 @@ const UserDetail = () => {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="editName">Name</Label>
-              <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} />
+              <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="editPhone">Phone</Label>
-              <Input id="editPhone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              <Input id="editPhone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2 sm:col-span-2">
               <Label htmlFor="newPassword">New password (leave blank to keep current)</Label>
@@ -245,17 +254,20 @@ const UserDetail = () => {
                 placeholder="••••••••"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                disabled={readOnly}
               />
             </div>
             <div className="flex items-center gap-2 sm:col-span-2">
-              <Switch id="editActive" checked={editActive} onCheckedChange={setEditActive} />
+              <Switch id="editActive" checked={editActive} onCheckedChange={setEditActive} disabled={readOnly} />
               <Label htmlFor="editActive">Active (can log in)</Label>
             </div>
           </div>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Save changes
-          </Button>
+          {!readOnly && (
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save changes
+            </Button>
+          )}
         </div>
       </div>
     </AdminLayout>

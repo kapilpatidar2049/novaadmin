@@ -30,7 +30,7 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const navigation = [
+const allNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Appointments", href: "/appointments", icon: CalendarCheck },
   { name: "Cities", href: "/cities", icon: MapPin },
@@ -45,16 +45,18 @@ const navigation = [
   { name: "Alerts", href: "/alerts", icon: Bell },
 ];
 
-const secondaryNavigation = [
-  { name: "Settings", href: "/settings", icon: Settings },
-];
+const vendorNavHrefs = new Set(["/", "/appointments", "/beauticians", "/users", "/alerts"]);
+
+const secondaryNavigationAll = [{ name: "Settings", href: "/settings", icon: Settings }];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isVendor } = useAuth();
+  const navigation = isVendor ? allNavigation.filter((n) => vendorNavHrefs.has(n.href)) : allNavigation;
+  const secondaryNavigation = isVendor ? [] : secondaryNavigationAll;
 
   useEffect(() => {
     adminApi.getAlerts().then((res) => {
@@ -80,7 +82,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <img src="/logo.png" alt="Nova Beauty" className="h-9 w-auto object-contain" />
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-sidebar-foreground">Nova Beauty</span>
-                <span className="text-xs text-sidebar-muted">Super Admin</span>
+                <span className="text-xs text-sidebar-muted">{isVendor ? "Vendor" : "Super Admin"}</span>
               </div>
             </div>
           )}
@@ -191,7 +193,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               {!collapsed && (
                 <div className="hidden sm:flex flex-col">
-                  <span className="text-sm font-medium text-foreground">Super Admin</span>
+                  <span className="text-sm font-medium text-foreground">{isVendor ? "Vendor" : "Super Admin"}</span>
                   <span className="text-xs text-muted-foreground">{user?.email ?? ""}</span>
                 </div>
               )}

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +28,12 @@ import AppointmentDetail from "./pages/AppointmentDetail";
 
 const queryClient = new QueryClient();
 
+function RequireSuperAdmin({ children }: { children: ReactNode }) {
+  const { isVendor } = useAuth();
+  if (isVendor) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();
   const location = useLocation();
@@ -45,23 +52,23 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/cities" element={<ProtectedRoute><Cities /></ProtectedRoute>} />
-              <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
+              <Route path="/cities" element={<ProtectedRoute><RequireSuperAdmin><Cities /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/vendors" element={<ProtectedRoute><RequireSuperAdmin><Vendors /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/beauticians" element={<ProtectedRoute><Beauticians /></ProtectedRoute>} />
               <Route path="/beauticians/:id" element={<ProtectedRoute><BeauticianDetail /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
               <Route path="/users/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
               <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
               <Route path="/appointments/:id" element={<ProtectedRoute><AppointmentDetail /></ProtectedRoute>} />
-              <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
-              <Route path="/services/new" element={<ProtectedRoute><ServiceForm /></ProtectedRoute>} />
-              <Route path="/services/:id/edit" element={<ProtectedRoute><ServiceForm /></ProtectedRoute>} />
-              <Route path="/banners" element={<ProtectedRoute><Banners /></ProtectedRoute>} />
-              <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-              <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+              <Route path="/services" element={<ProtectedRoute><RequireSuperAdmin><Services /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/services/new" element={<ProtectedRoute><RequireSuperAdmin><ServiceForm /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/services/:id/edit" element={<ProtectedRoute><RequireSuperAdmin><ServiceForm /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/banners" element={<ProtectedRoute><RequireSuperAdmin><Banners /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/categories" element={<ProtectedRoute><RequireSuperAdmin><Categories /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><RequireSuperAdmin><Reports /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/payments" element={<ProtectedRoute><RequireSuperAdmin><Payments /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><RequireSuperAdmin><Settings /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </HashRouter>

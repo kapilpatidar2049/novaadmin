@@ -3,7 +3,9 @@ import { authApi, setAuthTokens, clearAuth, setUser, getUser } from "@/lib/api";
 
 interface AuthContextType {
   isLoggedIn: boolean;
-  user: { name: string; email: string } | null;
+  user: { name: string; email: string; role?: string } | null;
+  /** Vendor panel login — read-only admin areas */
+  isVendor: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
 }
@@ -13,21 +15,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const savedUser = getUser();
   const [isLoggedIn, setIsLoggedIn] = useState(!!savedUser);
-  const [user, setUserState] = useState<{ name: string; email: string } | null>(
-    savedUser ? { name: savedUser.name, email: savedUser.email } : null
+  const [user, setUserState] = useState<{ name: string; email: string; role?: string } | null>(
+    savedUser ? { name: savedUser.name, email: savedUser.email, role: savedUser.role } : null
   );
+
+  const role = user?.role ?? (savedUser?.role as string | undefined);
+  const isVendor = role === "vendor";
 
   const login = async (email: string, password: string) => {
     try {
       const res = await authApi.login(email, password);
       if (res.success && res.data?.user && res.data?.tokens) {
         const { user: u, tokens } = res.data;
-        if (u.role !== "super_admin") {
-          return { ok: false, error: "Invalid account type. Admin access only." };
+        if (u.role !== "super_admin" && u.role !== "vendor") {
+          return { ok: false, error: "Invalid account type. Admin or vendor access only." };
         }
         setAuthTokens(tokens.accessToken, tokens.refreshToken);
-        setUser({ id: u.id, name: u.name, email: u.email });
-        setUserState({ name: u.name, email: u.email });
+        setUser({ id: u.id, name: u.name, email: u.email, role: u.role });
+        setUserState({ name: u.name, email: u.email, role: u.role });
         setIsLoggedIn(true);
         return { ok: true };
       }
@@ -51,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, user, isVendor, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

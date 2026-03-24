@@ -19,11 +19,11 @@ export function clearAuth() {
   localStorage.removeItem("admin_user");
 }
 
-export function setUser(user: { id: string; name: string; email: string }) {
+export function setUser(user: { id: string; name: string; email: string; role?: string }) {
   localStorage.setItem("admin_user", JSON.stringify(user));
 }
 
-export function getUser(): { id: string; name: string; email: string } | null {
+export function getUser(): { id: string; name: string; email: string; role?: string } | null {
   const s = localStorage.getItem("admin_user");
   if (!s) return null;
   try {
@@ -77,7 +77,10 @@ async function refreshToken(): Promise<boolean> {
     const json = await res.json();
     if (json.success && json.data?.tokens) {
       setAuthTokens(json.data.tokens.accessToken, json.data.tokens.refreshToken);
-      if (json.data.user) setUser(json.data.user);
+      if (json.data.user) {
+        const u = json.data.user as { id: string; name: string; email: string; role?: string };
+        setUser({ id: u.id, name: u.name, email: u.email, role: u.role });
+      }
       return true;
     }
   } catch {
@@ -101,6 +104,9 @@ export interface ApiCity {
   state?: string;
   country?: string;
   isActive?: boolean;
+  latitude?: number;
+  longitude?: number;
+  googlePlaceId?: string;
 }
 
 export interface ApiVendor {
@@ -301,9 +307,15 @@ export const adminApi = {
     request<{ items: ApiCity[]; meta: { page: number; limit: number; total: number } }>("/admin/cities", {
       params: { page: String(page), limit: String(limit), search },
     }),
-  createCity: (body: { name: string; state?: string; country?: string }) =>
-    request<ApiCity>("/admin/cities", { method: "POST", body: JSON.stringify(body) }),
-  updateCity: (id: string, body: { name?: string; state?: string; country?: string; isActive?: boolean }) =>
+  createCity: (body: {
+    name: string;
+    state?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+    googlePlaceId?: string;
+  }) => request<ApiCity>("/admin/cities", { method: "POST", body: JSON.stringify(body) }),
+  updateCity: (id: string, body: { name?: string; state?: string; country?: string; isActive?: boolean; latitude?: number; longitude?: number; googlePlaceId?: string }) =>
     request<ApiCity>(`/admin/cities/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteCity: (id: string) =>
     request(`/admin/cities/${id}`, { method: "DELETE" }),
@@ -311,9 +323,15 @@ export const adminApi = {
     request<{ items: ApiVendor[]; meta: { page: number; limit: number; total: number } }>("/admin/vendors", {
       params: { page: String(page), limit: String(limit), search, cityId },
     }),
-  createVendor: (body: { name: string; email: string; phone?: string; city: string; address?: string }) =>
-    request<ApiVendor>("/admin/vendors", { method: "POST", body: JSON.stringify(body) }),
-  updateVendor: (id: string, body: { name?: string; phone?: string; address?: string; isActive?: boolean }) =>
+  createVendor: (body: {
+    name: string;
+    email: string;
+    phone?: string;
+    city: string;
+    address?: string;
+    panelPassword?: string;
+  }) => request<ApiVendor>("/admin/vendors", { method: "POST", body: JSON.stringify(body) }),
+  updateVendor: (id: string, body: { name?: string; email?: string; phone?: string; address?: string; isActive?: boolean; city?: string; panelPassword?: string }) =>
     request<ApiVendor>(`/admin/vendors/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteVendor: (id: string) =>
     request(`/admin/vendors/${id}`, { method: "DELETE" }),

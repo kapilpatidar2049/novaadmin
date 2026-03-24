@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adminApi, type ApiAppointmentDetail, type ApiBeautician } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const statusLabels: Record<string, string> = {
   pending: "Pending",
@@ -79,7 +80,7 @@ const AppointmentDetail = () => {
   };
 
   const handleSaveAssign = async () => {
-    if (!id) return;
+    if (readOnly || !id) return;
     setSaving(true);
     setMessage(null);
     try {
@@ -133,6 +134,12 @@ const AppointmentDetail = () => {
             Back to Appointments
           </Button>
         </div>
+
+        {readOnly && (
+          <p className="text-sm rounded-md border border-border bg-muted/30 px-3 py-2 text-muted-foreground">
+            View-only: super admin can assign or change beauticians on bookings.
+          </p>
+        )}
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="p-6 border-b border-border">
@@ -214,10 +221,12 @@ const AppointmentDetail = () => {
               <Scissors className="h-5 w-5 text-muted-foreground" />
               Assign beautician
             </h2>
-            <Button onClick={handleSaveAssign} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              Save
-            </Button>
+            {!readOnly && (
+              <Button onClick={handleSaveAssign} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save
+              </Button>
+            )}
           </div>
           <div className="p-6 space-y-4">
             {message && (
@@ -229,7 +238,7 @@ const AppointmentDetail = () => {
             )}
             <div className="grid gap-2 max-w-md">
               <Label>Beautician</Label>
-              <Select value={assignBeauticianId || UNASSIGN_VALUE} onValueChange={setAssignBeauticianId}>
+              <Select value={assignBeauticianId || UNASSIGN_VALUE} onValueChange={setAssignBeauticianId} disabled={readOnly}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select beautician" />
                 </SelectTrigger>

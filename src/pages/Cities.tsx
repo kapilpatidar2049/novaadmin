@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, MapPin, Edit, Trash2, MoreHorizontal, Users, Store, DollarSign } from "lucide-react";
+import { GoogleCityAutocomplete } from "@/components/city/GoogleCityAutocomplete";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,9 @@ const Cities = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newState, setNewState] = useState("");
+  const [placeLat, setPlaceLat] = useState<number | undefined>(undefined);
+  const [placeLng, setPlaceLng] = useState<number | undefined>(undefined);
+  const [placeId, setPlaceId] = useState("");
   const [saving, setSaving] = useState(false);
 
   const fetchCities = useCallback(async () => {
@@ -45,11 +49,20 @@ const Cities = () => {
   const handleAddCity = async () => {
     if (!newName.trim()) return;
     setSaving(true);
-    const res = await adminApi.createCity({ name: newName.trim(), state: newState.trim() || undefined });
+    const res = await adminApi.createCity({
+      name: newName.trim(),
+      state: newState.trim() || undefined,
+      ...(placeLat != null && placeLng != null
+        ? { latitude: placeLat, longitude: placeLng, googlePlaceId: placeId || undefined }
+        : {}),
+    });
     setSaving(false);
     if (res.success) {
       setNewName("");
       setNewState("");
+      setPlaceLat(undefined);
+      setPlaceLng(undefined);
+      setPlaceId("");
       setDialogOpen(false);
       fetchCities();
     }
@@ -89,6 +102,21 @@ const Cities = () => {
                 <DialogDescription>Add a new city to expand your service coverage</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+                {import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? (
+                  <GoogleCityAutocomplete
+                    onResolved={(p) => {
+                      if (p.name) setNewName(p.name);
+                      setPlaceLat(p.lat);
+                      setPlaceLng(p.lng);
+                      setPlaceId(p.placeId);
+                      if (p.state) setNewState(p.state);
+                    }}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Set <code className="text-xs">VITE_GOOGLE_MAPS_API_KEY</code> in <code className="text-xs">.env</code> to enable Places search, or enter the city name manually (without coordinates).
+                  </p>
+                )}
                 <div className="grid gap-2">
                   <Label htmlFor="cityName">City Name</Label>
                   <Input id="cityName" placeholder="Enter city name" value={newName} onChange={(e) => setNewName(e.target.value)} />
@@ -97,6 +125,11 @@ const Cities = () => {
                   <Label htmlFor="state">State</Label>
                   <Input id="state" placeholder="Enter state name" value={newState} onChange={(e) => setNewState(e.target.value)} />
                 </div>
+                {placeLat != null && placeLng != null && (
+                  <p className="text-xs text-muted-foreground">
+                    Coordinates: {placeLat.toFixed(5)}, {placeLng.toFixed(5)} (saved with city for GPS matching)
+                  </p>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

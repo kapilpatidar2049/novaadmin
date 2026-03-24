@@ -46,7 +46,17 @@ const Vendors = () => {
   const [newPhone, setNewPhone] = useState("");
   const [newCityId, setNewCityId] = useState("");
   const [newAddress, setNewAddress] = useState("");
+  const [newPanelPassword, setNewPanelPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editCityId, setEditCityId] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editPanelPassword, setEditPanelPassword] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<ApiVendor | null>(null);
 
@@ -87,6 +97,7 @@ const Vendors = () => {
         phone: newPhone.trim() || undefined,
         city: newCityId,
         address: newAddress.trim() || undefined,
+        ...(newPanelPassword.trim().length >= 6 ? { panelPassword: newPanelPassword.trim() } : {}),
       });
       if (res.success) {
         setNewName("");
@@ -94,6 +105,7 @@ const Vendors = () => {
         setNewPhone("");
         setNewCityId("");
         setNewAddress("");
+        setNewPanelPassword("");
         setDialogOpen(false);
         fetchVendors();
       }
@@ -151,6 +163,18 @@ const Vendors = () => {
                 <div className="grid gap-2">
                   <Label htmlFor="vendorAddress">Address (optional)</Label>
                   <Input id="vendorAddress" placeholder="Address" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="panelPw">Admin panel password (min 6 chars)</Label>
+                  <Input
+                    id="panelPw"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Leave empty to auto-generate"
+                    value={newPanelPassword}
+                    onChange={(e) => setNewPanelPassword(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Vendor uses this email + password to sign in here (vendor role).</p>
                 </div>
               </div>
               <DialogFooter>
@@ -259,6 +283,21 @@ const Vendors = () => {
                       <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditId(vendor._id);
+                        setEditName(vendor.name);
+                        setEditEmail(vendor.email);
+                        setEditPhone(vendor.phone || "");
+                        const cid = typeof vendor.city === "object" && vendor.city ? (vendor.city as ApiCity)._id : String(vendor.city || "");
+                        setEditCityId(cid);
+                        setEditAddress(vendor.address || "");
+                        setEditPanelPassword("");
+                        setEditOpen(true);
+                      }}
+                    >
+                      Edit vendor & password
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ),
@@ -340,6 +379,88 @@ const Vendors = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
                 Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit vendor</DialogTitle>
+              <DialogDescription>Update business details and admin-panel login password for the vendor user.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 py-2">
+              <div className="grid gap-2">
+                <Label>Name</Label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Email (login)</Label>
+                <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Phone</Label>
+                <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              </div>
+              <div className="grid gap-2">
+                <Label>City</Label>
+                <Select value={editCityId} onValueChange={setEditCityId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="City" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cities.map((c) => (
+                      <SelectItem key={c._id} value={c._id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Address</Label>
+                <Input value={editAddress} onChange={(e) => setEditAddress(e.target.value)} />
+              </div>
+              <div className="grid gap-2">
+                <Label>New panel password (optional)</Label>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Min 6 characters — leave blank to keep current"
+                  value={editPanelPassword}
+                  onChange={(e) => setEditPanelPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                disabled={editSaving || !editName.trim() || !editEmail.trim() || !editCityId}
+                onClick={async () => {
+                  setEditSaving(true);
+                  try {
+                    const body: Parameters<typeof adminApi.updateVendor>[1] = {
+                      name: editName.trim(),
+                      email: editEmail.trim(),
+                      phone: editPhone.trim() || undefined,
+                      city: editCityId,
+                      address: editAddress.trim() || undefined,
+                    };
+                    if (editPanelPassword.trim().length >= 6) body.panelPassword = editPanelPassword.trim();
+                    const res = await adminApi.updateVendor(editId, body);
+                    if (res.success) {
+                      setEditOpen(false);
+                      fetchVendors();
+                    }
+                  } finally {
+                    setEditSaving(false);
+                  }
+                }}
+              >
+                {editSaving ? "Saving..." : "Save"}
               </Button>
             </DialogFooter>
           </DialogContent>
