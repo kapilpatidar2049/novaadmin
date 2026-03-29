@@ -86,13 +86,13 @@ const BeauticianDetail = () => {
 
   useEffect(() => {
     adminApi
-      .getCities(1, 200)
+      .getCities(1, 50)
       .then((res) => {
         if (res.success && res.data?.items) setCities(res.data.items.map((c) => ({ _id: c._id, name: c.name })));
       })
       .catch(() => setCities([]));
     adminApi
-      .getVendors(1, 200)
+      .getVendors(1, 50)
       .then((res) => {
         if (res.success && res.data?.items) setVendors(res.data.items.map((v) => ({ _id: v._id, name: v.name })));
       })
