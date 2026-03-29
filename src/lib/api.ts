@@ -260,6 +260,20 @@ export interface TopVendor {
   avatar: string;
 }
 
+export interface ApiReferralSettings {
+  isEnabled: boolean;
+  customerRewardAmount: number;
+  beauticianRewardAmount: number;
+  updatedAt?: string;
+}
+
+/** Platform admin commission as percentage (0–100) of relevant revenue, per role. */
+export interface ApiPlatformCommissionSettings {
+  beauticianCommissionPercent: number;
+  vendorCommissionPercent: number;
+  updatedAt?: string;
+}
+
 export interface DashboardData {
   totalCities: number;
   totalVendors: number;
@@ -302,6 +316,25 @@ export interface ApiAppointmentDetail extends ApiAppointmentSummary {
 }
 
 export const adminApi = {
+  getReferralSettings: () => request<ApiReferralSettings>("/admin/referral-settings"),
+  updateReferralSettings: (body: {
+    isEnabled?: boolean;
+    customerRewardAmount?: number;
+    beauticianRewardAmount?: number;
+  }) =>
+    request<ApiReferralSettings>("/admin/referral-settings", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  getPlatformCommissionSettings: () => request<ApiPlatformCommissionSettings>("/admin/commission-settings"),
+  updatePlatformCommissionSettings: (body: {
+    beauticianCommissionPercent?: number;
+    vendorCommissionPercent?: number;
+  }) =>
+    request<ApiPlatformCommissionSettings>("/admin/commission-settings", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
   getDashboard: () => request<DashboardData>("/admin/dashboard"),
   getCities: (page = 1, limit = 50, search = "") =>
     request<{ items: ApiCity[]; meta: { page: number; limit: number; total: number } }>("/admin/cities", {

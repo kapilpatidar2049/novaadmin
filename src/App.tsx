@@ -22,6 +22,8 @@ import Reports from "./pages/Reports";
 import Payments from "./pages/Payments";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
+import Referral from "./pages/Referral";
+import Commissions from "./pages/Commissions";
 import NotFound from "./pages/NotFound";
 import Appointments from "./pages/Appointments";
 import AppointmentDetail from "./pages/AppointmentDetail";
@@ -72,6 +74,8 @@ const App = () => (
               <Route path="/reports" element={<ProtectedRoute><RequireSuperAdmin><Reports /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/payments" element={<ProtectedRoute><RequireSuperAdmin><Payments /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
+              <Route path="/referral" element={<ProtectedRoute><RequireSuperAdmin><Referral /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/commissions" element={<ProtectedRoute><RequireSuperAdmin><Commissions /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><RequireSuperAdmin><Settings /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

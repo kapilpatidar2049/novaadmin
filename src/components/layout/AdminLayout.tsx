@@ -20,6 +20,8 @@ import {
   CreditCard,
   Package,
   ShoppingCart,
+  Gift,
+  Percent,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -51,7 +53,11 @@ const allNavigation = [
 
 const vendorNavHrefs = new Set(["/", "/appointments", "/beauticians", "/users", "/alerts", "/inventory", "/product-orders"]);
 
-const secondaryNavigationAll = [{ name: "Settings", href: "/settings", icon: Settings }];
+const secondaryNavigationAll = [
+  { name: "Referral", href: "/referral", icon: Gift },
+  { name: "Commissions", href: "/commissions", icon: Percent },
+  { name: "Settings", href: "/settings", icon: Settings },
+];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
