@@ -94,6 +94,12 @@ const BeauticianDetail = () => {
     }).catch(() => {});
   }, [isVendor]);
 
+  /** Radix Select breaks when `value` is "" or doesn’t match any item (e.g. list still loading). */
+  const citySelectValue =
+    editCityId && cities.some((c) => c._id === editCityId) ? editCityId : undefined;
+  const vendorSelectValue =
+    editVendorId && vendors.some((v) => v._id === editVendorId) ? editVendorId : undefined;
+
   const handleSave = async () => {
     if (readOnly || !id || !detail) return;
     setSaving(true);
@@ -335,7 +341,7 @@ const BeauticianDetail = () => {
             </div>
             <div className="grid gap-2">
               <Label>City</Label>
-              <Select value={editCityId} onValueChange={setEditCityId} disabled={readOnly}>
+              <Select value={citySelectValue} onValueChange={setEditCityId} disabled={readOnly}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select city" />
                 </SelectTrigger>
@@ -350,7 +356,7 @@ const BeauticianDetail = () => {
             </div>
             <div className="grid gap-2">
               <Label>Vendor</Label>
-              <Select value={editVendorId} onValueChange={setEditVendorId} disabled={readOnly}>
+              <Select value={vendorSelectValue} onValueChange={setEditVendorId} disabled={readOnly}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>

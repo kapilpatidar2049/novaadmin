@@ -32,6 +32,8 @@ const statusLabels: Record<string, string> = {
 const UNASSIGN_VALUE = "__unassign__";
 
 const AppointmentDetail = () => {
+  const { isVendor } = useAuth();
+  const readOnly = isVendor;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ApiAppointmentDetail | null>(null);
