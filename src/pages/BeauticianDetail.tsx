@@ -85,14 +85,19 @@ const BeauticianDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    if (isVendor) return;
-    adminApi.getCities(1, 200).then((res) => {
-      if (res.success && res.data?.items) setCities(res.data.items.map((c) => ({ _id: c._id, name: c.name })));
-    }).catch(() => {});
-    adminApi.getVendors(1, 200).then((res) => {
-      if (res.success && res.data?.items) setVendors(res.data.items.map((v) => ({ _id: v._id, name: v.name })));
-    }).catch(() => {});
-  }, [isVendor]);
+    adminApi
+      .getCities(1, 200)
+      .then((res) => {
+        if (res.success && res.data?.items) setCities(res.data.items.map((c) => ({ _id: c._id, name: c.name })));
+      })
+      .catch(() => setCities([]));
+    adminApi
+      .getVendors(1, 200)
+      .then((res) => {
+        if (res.success && res.data?.items) setVendors(res.data.items.map((v) => ({ _id: v._id, name: v.name })));
+      })
+      .catch(() => setVendors([]));
+  }, []);
 
   /** Radix Select breaks when `value` is "" or doesn’t match any item (e.g. list still loading). */
   const citySelectValue =
