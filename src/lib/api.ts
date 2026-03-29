@@ -471,4 +471,82 @@ export const adminApi = {
     request<ApiAppointmentDetail>("/admin/appointments/" + id),
   updateAppointment: (id: string, body: { beautician?: string | null }) =>
     request<ApiAppointmentDetail>(`/admin/appointments/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  getInventory: (page = 1, limit = 50, search = "", vendorId = "") =>
+    request<{
+      items: Array<{
+        _id: string;
+        name: string;
+        sku?: string;
+        quantity: number;
+        unit?: string;
+        costPrice?: number;
+        sellingPrice?: number;
+        isActive?: boolean;
+        showInShop?: boolean;
+        imageUrl?: string;
+        description?: string;
+        vendor?: { _id: string; name?: string };
+      }>;
+      meta: { page: number; limit: number; total: number };
+    }>("/admin/inventory", {
+      params: {
+        page: String(page),
+        limit: String(limit),
+        search,
+        ...(vendorId ? { vendorId } : {}),
+      },
+    }),
+  createInventoryItem: (body: {
+    vendorId?: string;
+    name: string;
+    sku?: string;
+    quantity?: number;
+    unit?: string;
+    costPrice?: number;
+    sellingPrice?: number;
+    isActive?: boolean;
+    showInShop?: boolean;
+    imageUrl?: string;
+    description?: string;
+  }) =>
+    request<{ _id: string }>("/admin/inventory", { method: "POST", body: JSON.stringify(body) }),
+  updateInventoryItem: (
+    id: string,
+    body: {
+      name?: string;
+      sku?: string;
+      quantity?: number;
+      unit?: string;
+      costPrice?: number;
+      sellingPrice?: number;
+      isActive?: boolean;
+      showInShop?: boolean;
+      imageUrl?: string;
+      description?: string;
+    },
+  ) => request<{ _id: string }>(`/admin/inventory/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteInventoryItem: (id: string) => request(`/admin/inventory/${id}`, { method: "DELETE" }),
+  getProductOrders: (page = 1, limit = 50, vendorId = "", status = "") =>
+    request<{
+      items: Array<{
+        _id: string;
+        customer?: { name?: string; email?: string; phone?: string };
+        vendor?: { name?: string };
+        totalAmount: number;
+        status: string;
+        paymentMode?: string;
+        address?: string;
+        createdAt?: string;
+      }>;
+      meta: { page: number; limit: number; total: number };
+    }>("/admin/product-orders", {
+      params: {
+        page: String(page),
+        limit: String(limit),
+        ...(vendorId ? { vendorId } : {}),
+        ...(status ? { status } : {}),
+      },
+    }),
+  updateProductOrderStatus: (id: string, status: string) =>
+    request(`/admin/product-orders/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
 };

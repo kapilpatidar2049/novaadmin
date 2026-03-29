@@ -25,6 +25,8 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Appointments from "./pages/Appointments";
 import AppointmentDetail from "./pages/AppointmentDetail";
+import Inventory from "./pages/Inventory";
+import ProductOrders from "./pages/ProductOrders";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,8 @@ const App = () => (
               <Route path="/users/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
               <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
               <Route path="/appointments/:id" element={<ProtectedRoute><AppointmentDetail /></ProtectedRoute>} />
+              <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+              <Route path="/product-orders" element={<ProtectedRoute><ProductOrders /></ProtectedRoute>} />
               <Route path="/services" element={<ProtectedRoute><RequireSuperAdmin><Services /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/services/new" element={<ProtectedRoute><RequireSuperAdmin><ServiceForm /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/services/:id/edit" element={<ProtectedRoute><RequireSuperAdmin><ServiceForm /></RequireSuperAdmin></ProtectedRoute>} />

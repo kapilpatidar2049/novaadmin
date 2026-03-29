@@ -18,6 +18,8 @@ import {
   FolderOpen,
   CalendarCheck,
   CreditCard,
+  Package,
+  ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -40,12 +42,14 @@ const allNavigation = [
   { name: "Banners", href: "/banners", icon: ImageIcon },
   { name: "Categories", href: "/categories", icon: FolderOpen },
   { name: "Services", href: "/services", icon: ListChecks },
+  { name: "Inventory", href: "/inventory", icon: Package },
+  { name: "Product orders", href: "/product-orders", icon: ShoppingCart },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Payments", href: "/payments", icon: CreditCard },
   { name: "Alerts", href: "/alerts", icon: Bell },
 ];
 
-const vendorNavHrefs = new Set(["/", "/appointments", "/beauticians", "/users", "/alerts"]);
+const vendorNavHrefs = new Set(["/", "/appointments", "/beauticians", "/users", "/alerts", "/inventory", "/product-orders"]);
 
 const secondaryNavigationAll = [{ name: "Settings", href: "/settings", icon: Settings }];
 
