@@ -76,7 +76,7 @@ const Inventory = () => {
 
   useEffect(() => {
     if (isVendor) return;
-    adminApi.getVendors(1, 200).then((res) => {
+    adminApi.getVendors(1, 100).then((res) => {
       if (res.success && res.data?.items) {
         setVendors(res.data.items.map((v) => ({ _id: v._id, name: v.name })));
       }
