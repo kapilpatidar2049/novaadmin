@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Plus, Pencil, Trash2, Package } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,6 @@ const emptyForm = {
   costPrice: "",
   isActive: true,
   showInShop: true,
-  imageUrl: "",
   description: "",
 };
 
@@ -62,6 +61,21 @@ const Inventory = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [imageRemoved, setImageRemoved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setObjectUrl(null);
+      return;
+    }
+    const u = URL.createObjectURL(imageFile);
+    setObjectUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [imageFile]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,6 +100,9 @@ const Inventory = () => {
   const openCreate = () => {
     setEditId(null);
     setForm(emptyForm);
+    setImageFile(null);
+    setExistingImageUrl(null);
+    setImageRemoved(false);
     setDialogOpen(true);
   };
 
@@ -101,9 +118,11 @@ const Inventory = () => {
       costPrice: r.costPrice != null ? String(r.costPrice) : "",
       isActive: r.isActive !== false,
       showInShop: r.showInShop !== false,
-      imageUrl: r.imageUrl || "",
       description: r.description || "",
     });
+    setImageFile(null);
+    setExistingImageUrl(r.imageUrl || null);
+    setImageRemoved(false);
     setDialogOpen(true);
   };
 
@@ -117,8 +136,7 @@ const Inventory = () => {
       return;
     }
     setSaving(true);
-    const body = {
-      ...(isVendor ? {} : { vendorId: form.vendorId || undefined }),
+    const base = {
       name: form.name.trim(),
       sku: form.sku.trim(),
       quantity: Number(form.quantity) || 0,
@@ -127,12 +145,21 @@ const Inventory = () => {
       costPrice: form.costPrice ? Number(form.costPrice) : undefined,
       isActive: form.isActive,
       showInShop: form.showInShop,
-      imageUrl: form.imageUrl.trim(),
       description: form.description.trim(),
     };
     const res = editId
-      ? await adminApi.updateInventoryItem(editId, body)
-      : await adminApi.createInventoryItem(body);
+      ? await adminApi.updateInventoryItem(
+          editId,
+          {
+            ...base,
+            ...(imageRemoved && !imageFile ? { clearImage: true } : {}),
+          },
+          imageFile
+        )
+      : await adminApi.createInventoryItem(
+          { ...base, ...(isVendor ? {} : { vendorId: form.vendorId || undefined }) },
+          imageFile
+        );
     setSaving(false);
     if (res.success) {
       toast.success(editId ? "Updated" : "Created");
@@ -182,6 +209,7 @@ const Inventory = () => {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
+                <th className="text-left p-3 font-medium w-14">Img</th>
                 <th className="text-left p-3 font-medium">Name</th>
                 {!isVendor && <th className="text-left p-3 font-medium">Vendor</th>}
                 <th className="text-right p-3 font-medium">Qty</th>
@@ -193,7 +221,7 @@ const Inventory = () => {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
                     Loading…
                   </td>
                 </tr>
@@ -201,6 +229,13 @@ const Inventory = () => {
               {!loading &&
                 rows.map((r) => (
                   <tr key={r._id} className="border-t border-border">
+                    <td className="p-2">
+                      {r.imageUrl ? (
+                        <img src={r.imageUrl} alt="" className="h-10 w-10 rounded-md object-cover bg-muted" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-md bg-muted" />
+                      )}
+                    </td>
                     <td className="p-3 font-medium">{r.name}</td>
                     {!isVendor && <td className="p-3 text-muted-foreground">{r.vendor?.name || "—"}</td>}
                     <td className="p-3 text-right">{r.quantity}</td>
@@ -274,8 +309,48 @@ const Inventory = () => {
                 <Input value={form.sku} onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))} />
               </div>
               <div>
-                <Label>Image URL (optional)</Label>
-                <Input value={form.imageUrl} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} placeholder="https://…" />
+                <Label>Product image</Label>
+                <div className="flex flex-col gap-2 mt-1">
+                  {(objectUrl || existingImageUrl) && (
+                    <img
+                      src={objectUrl || existingImageUrl || ""}
+                      alt=""
+                      className="h-32 w-full max-w-xs rounded-lg object-cover border border-border bg-muted"
+                    />
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      setImageFile(f ?? null);
+                      if (f) setImageRemoved(false);
+                    }}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                      {imageFile || existingImageUrl ? "Change image" : "Upload image"}
+                    </Button>
+                    {(imageFile || existingImageUrl) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setImageFile(null);
+                          setExistingImageUrl(null);
+                          setImageRemoved(true);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">JPG, PNG, WebP — max 5 MB. Edit: leave unchanged to keep current photo.</p>
+                </div>
               </div>
               <div>
                 <Label>Description</Label>

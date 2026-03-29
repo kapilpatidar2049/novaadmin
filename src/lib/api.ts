@@ -496,24 +496,10 @@ export const adminApi = {
         ...(vendorId ? { vendorId } : {}),
       },
     }),
-  createInventoryItem: (body: {
-    vendorId?: string;
-    name: string;
-    sku?: string;
-    quantity?: number;
-    unit?: string;
-    costPrice?: number;
-    sellingPrice?: number;
-    isActive?: boolean;
-    showInShop?: boolean;
-    imageUrl?: string;
-    description?: string;
-  }) =>
-    request<{ _id: string }>("/admin/inventory", { method: "POST", body: JSON.stringify(body) }),
-  updateInventoryItem: (
-    id: string,
+  createInventoryItem: (
     body: {
-      name?: string;
+      vendorId?: string;
+      name: string;
       sku?: string;
       quantity?: number;
       unit?: string;
@@ -521,10 +507,55 @@ export const adminApi = {
       sellingPrice?: number;
       isActive?: boolean;
       showInShop?: boolean;
-      imageUrl?: string;
       description?: string;
     },
-  ) => request<{ _id: string }>(`/admin/inventory/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    imageFile?: File | null,
+  ) => {
+    const form = new FormData();
+    form.append("name", body.name);
+    if (body.vendorId) form.append("vendorId", body.vendorId);
+    form.append("sku", body.sku ?? "");
+    form.append("quantity", String(body.quantity ?? 0));
+    form.append("unit", body.unit ?? "");
+    form.append("costPrice", body.costPrice != null ? String(body.costPrice) : "");
+    form.append("sellingPrice", body.sellingPrice != null ? String(body.sellingPrice) : "");
+    form.append("isActive", String(body.isActive !== false));
+    form.append("showInShop", String(body.showInShop !== false));
+    form.append("description", body.description ?? "");
+    if (imageFile) form.append("image", imageFile);
+    return request<{ _id: string }>("/admin/inventory", { method: "POST", body: form });
+  },
+  updateInventoryItem: (
+    id: string,
+    body: {
+      name: string;
+      sku?: string;
+      quantity?: number;
+      unit?: string;
+      costPrice?: number;
+      sellingPrice?: number;
+      isActive?: boolean;
+      showInShop?: boolean;
+      description?: string;
+      /** Remove stored image without uploading a new file */
+      clearImage?: boolean;
+    },
+    imageFile?: File | null,
+  ) => {
+    const form = new FormData();
+    form.append("name", body.name);
+    form.append("sku", body.sku ?? "");
+    form.append("quantity", String(body.quantity ?? 0));
+    form.append("unit", body.unit ?? "");
+    form.append("costPrice", body.costPrice != null ? String(body.costPrice) : "");
+    form.append("sellingPrice", body.sellingPrice != null ? String(body.sellingPrice) : "");
+    form.append("isActive", String(body.isActive !== false));
+    form.append("showInShop", String(body.showInShop !== false));
+    form.append("description", body.description ?? "");
+    if (imageFile) form.append("image", imageFile);
+    if (body.clearImage && !imageFile) form.append("clearImage", "true");
+    return request<{ _id: string }>(`/admin/inventory/${id}`, { method: "PUT", body: form });
+  },
   deleteInventoryItem: (id: string) => request(`/admin/inventory/${id}`, { method: "DELETE" }),
   getProductOrders: (page = 1, limit = 50, vendorId = "", status = "") =>
     request<{
