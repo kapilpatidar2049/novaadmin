@@ -117,6 +117,7 @@ export interface ApiVendor {
   city: ApiCity | string;
   address?: string;
   isActive?: boolean;
+  platformCommissionPercent?: number;
 }
 
 export interface ApiBanner {
@@ -173,6 +174,7 @@ export interface ApiBeauticianDetail {
   cityId?: string;
   vendor: string;
   vendorId: string;
+  platformCommissionPercent: number;
   totalJobs: number;
   totalEarnings: number;
   walletBalance: number;
@@ -267,13 +269,6 @@ export interface ApiReferralSettings {
   updatedAt?: string;
 }
 
-/** Platform admin commission as percentage (0–100) of relevant revenue, per role. */
-export interface ApiPlatformCommissionSettings {
-  beauticianCommissionPercent: number;
-  vendorCommissionPercent: number;
-  updatedAt?: string;
-}
-
 export interface DashboardData {
   totalCities: number;
   totalVendors: number;
@@ -326,15 +321,6 @@ export const adminApi = {
       method: "PUT",
       body: JSON.stringify(body),
     }),
-  getPlatformCommissionSettings: () => request<ApiPlatformCommissionSettings>("/admin/commission-settings"),
-  updatePlatformCommissionSettings: (body: {
-    beauticianCommissionPercent?: number;
-    vendorCommissionPercent?: number;
-  }) =>
-    request<ApiPlatformCommissionSettings>("/admin/commission-settings", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
   getDashboard: () => request<DashboardData>("/admin/dashboard"),
   getCities: (page = 1, limit = 50, search = "") =>
     request<{ items: ApiCity[]; meta: { page: number; limit: number; total: number } }>("/admin/cities", {
@@ -362,9 +348,10 @@ export const adminApi = {
     phone?: string;
     city: string;
     address?: string;
+    platformCommissionPercent?: number;
     panelPassword?: string;
   }) => request<ApiVendor>("/admin/vendors", { method: "POST", body: JSON.stringify(body) }),
-  updateVendor: (id: string, body: { name?: string; email?: string; phone?: string; address?: string; isActive?: boolean; city?: string; panelPassword?: string }) =>
+  updateVendor: (id: string, body: { name?: string; email?: string; phone?: string; address?: string; isActive?: boolean; city?: string; platformCommissionPercent?: number; panelPassword?: string }) =>
     request<ApiVendor>(`/admin/vendors/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteVendor: (id: string) =>
     request(`/admin/vendors/${id}`, { method: "DELETE" }),
@@ -465,11 +452,11 @@ export const adminApi = {
     }),
   getBeauticianById: (id: string) =>
     request<ApiBeauticianDetail>(`/admin/beauticians/${id}`),
-  updateBeautician: (id: string, body: { name?: string; phone?: string; password?: string; rating?: number; walletBalance?: number; isActive?: boolean; expertise?: string[]; experienceYears?: number; isAvailable?: boolean; cityId?: string; vendorId?: string; kycStatus?: "pending" | "approved" | "rejected"; documents?: Array<{ id: string; status?: "pending" | "approved" | "rejected"; notes?: string }> }) =>
+  updateBeautician: (id: string, body: { name?: string; phone?: string; password?: string; rating?: number; walletBalance?: number; isActive?: boolean; expertise?: string[]; experienceYears?: number; isAvailable?: boolean; cityId?: string; vendorId?: string; kycStatus?: "pending" | "approved" | "rejected"; platformCommissionPercent?: number; documents?: Array<{ id: string; status?: "pending" | "approved" | "rejected"; notes?: string }> }) =>
     request<ApiBeauticianDetail>(`/admin/beauticians/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   getBeauticianLiveLocation: (id: string) =>
     request<LiveBeautician | null>(`/admin/beauticians/${id}/live-location`),
-  createBeautician: (body: { name: string; email: string; password?: string; phone?: string; vendorId: string; cityId?: string }) =>
+  createBeautician: (body: { name: string; email: string; password?: string; phone?: string; vendorId: string; cityId?: string; platformCommissionPercent?: number }) =>
     request<ApiBeautician>("/admin/beauticians", { method: "POST", body: JSON.stringify(body) }),
   getUsers: (page = 1, limit = 50, search = "", role = "") =>
     request<{ items: ApiUser[]; meta: { page: number; limit: number; total: number } }>("/admin/users", {
@@ -484,10 +471,16 @@ export const adminApi = {
     request<{ items: ApiPayment[]; meta: { page: number; limit: number; total: number } }>("/admin/payments", {
       params: { page: String(page), limit: String(limit), status },
     }),
-  getReports: (from?: string, to?: string) => {
+  getReports: (
+    from?: string,
+    to?: string,
+    scope?: { beauticianId?: string; vendorId?: string },
+  ) => {
     const params: Record<string, string> = {};
     if (from) params.from = from;
     if (to) params.to = to;
+    if (scope?.beauticianId) params.beauticianId = scope.beauticianId;
+    if (scope?.vendorId) params.vendorId = scope.vendorId;
     return request<{ payments: unknown[] }>("/admin/reports", { params });
   },
   getAppointments: (page = 1, limit = 50, status = "", customerId = "", beauticianId = "") =>

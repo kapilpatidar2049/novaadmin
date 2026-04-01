@@ -23,6 +23,8 @@ import { useAuth } from "@/contexts/AuthContext";
 const statusLabels: Record<string, string> = {
   pending: "Pending",
   accepted: "Accepted",
+  in_transit: "On the way",
+  reached: "Arrived (OTP)",
   in_progress: "In Progress",
   completed: "Completed",
   cancelled: "Cancelled",

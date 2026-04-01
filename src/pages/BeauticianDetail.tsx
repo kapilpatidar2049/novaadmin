@@ -33,6 +33,7 @@ import {
 import { adminApi, type ApiBeauticianDetail } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { EmbeddedReportsSection } from "@/components/reports/EmbeddedReportsSection";
 
 const BeauticianDetail = () => {
   const { isVendor } = useAuth();
@@ -50,6 +51,7 @@ const BeauticianDetail = () => {
   const [editActive, setEditActive] = useState(true);
   const [editCityId, setEditCityId] = useState("");
   const [editVendorId, setEditVendorId] = useState("");
+  const [editPlatformCommissionPercent, setEditPlatformCommissionPercent] = useState("10");
   const [cities, setCities] = useState<Array<{ _id: string; name: string }>>([]);
   const [vendors, setVendors] = useState<Array<{ _id: string; name: string }>>([]);
   const [kycStatus, setKycStatus] = useState<"pending" | "approved" | "rejected">("pending");
@@ -71,6 +73,7 @@ const BeauticianDetail = () => {
           setEditWallet(String(res.data.walletBalance ?? 0));
           setEditCityId(res.data.cityId || "");
           setEditVendorId(res.data.vendorId || "");
+          setEditPlatformCommissionPercent(String(res.data.platformCommissionPercent ?? 10));
           setEditActive(res.data.isActive !== false);
           setKycStatus(res.data.kycStatus || "pending");
           const initialDocs: Record<string, { status: "pending" | "approved" | "rejected"; notes: string }> = {};
@@ -118,6 +121,7 @@ const BeauticianDetail = () => {
         isActive: editActive,
         cityId: editCityId || undefined,
         vendorId: editVendorId || undefined,
+        platformCommissionPercent: Math.min(100, Math.max(0, Number(editPlatformCommissionPercent) || 0)),
         kycStatus,
         documents: Object.entries(docEdits).map(([id, v]) => ({
           id,
@@ -130,6 +134,7 @@ const BeauticianDetail = () => {
       if (res.success && res.data) {
         setDetail(res.data);
         setEditWallet(String(res.data.walletBalance ?? 0));
+        setEditPlatformCommissionPercent(String(res.data.platformCommissionPercent ?? 10));
         setNewPassword("");
         setKycStatus(res.data.kycStatus || "pending");
         const updatedDocs: Record<string, { status: "pending" | "approved" | "rejected"; notes: string }> = {};
@@ -252,6 +257,12 @@ const BeauticianDetail = () => {
           </div>
         </div>
 
+        {id && (
+          <div className="bg-card rounded-lg border border-border p-6">
+            <EmbeddedReportsSection beauticianId={id} title="Reports" />
+          </div>
+        )}
+
         {/* Info grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-card rounded-lg border border-border p-4">
@@ -280,6 +291,10 @@ const BeauticianDetail = () => {
               <li className="flex items-center gap-2">
                 <span className="text-muted-foreground">Experience (years):</span>
                 <span className="text-foreground">{detail.experienceYears ?? 0}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-muted-foreground">Platform commission:</span>
+                <span className="text-foreground">{detail.platformCommissionPercent ?? 10}%</span>
               </li>
             </ul>
           </div>
@@ -395,6 +410,20 @@ const BeauticianDetail = () => {
                 min={0}
                 value={editWallet}
                 onChange={(e) => setEditWallet(e.target.value)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="editPlatformPct">Platform commission (%)</Label>
+              <p className="text-xs text-muted-foreground">Share of service revenue retained by the platform for this beautician (0–100).</p>
+              <Input
+                id="editPlatformPct"
+                type="number"
+                min={0}
+                max={100}
+                step={0.5}
+                value={editPlatformCommissionPercent}
+                onChange={(e) => setEditPlatformCommissionPercent(e.target.value)}
                 disabled={readOnly}
               />
             </div>

@@ -77,11 +77,57 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }, [location.pathname]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-background">
+      {/* Top bar — full viewport width on desktop */}
+      <header className="h-16 shrink-0 w-full border-b border-border bg-card flex items-center justify-between px-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-4">
+          <h1 className="truncate text-lg font-semibold text-foreground">
+            {navigation.find((n) => n.href === location.pathname)?.name ||
+              secondaryNavigation.find((n) => n.href === location.pathname)?.name ||
+              (location.pathname.startsWith("/beauticians/") ? "Beautician profile" : null) ||
+              (location.pathname.startsWith("/users/") ? "User profile" : null) ||
+              (location.pathname.startsWith("/appointments/") ? "Appointment details" : null) ||
+              "Dashboard"}
+          </h1>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/alerts")} title="Open alerts">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            {unreadAlerts > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
+                {unreadAlerts > 99 ? "99+" : unreadAlerts}
+              </span>
+            )}
+          </Button>
+          <Separator orientation="vertical" className="h-8 hidden sm:block" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-xs font-medium text-primary-foreground">{user?.name?.charAt(0) ?? "A"}</span>
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-medium text-foreground">{isVendor ? "Vendor" : "Super Admin"}</span>
+              <span className="text-xs text-muted-foreground truncate max-w-[200px]">{user?.email ?? ""}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1 w-full overflow-hidden">
       {/* Sidebar */}
       <aside
         className={cn(
-          "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
+          "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out shrink-0",
           collapsed ? "w-[70px]" : "w-[260px]"
         )}
       >
@@ -174,56 +220,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold text-foreground">
-              {navigation.find((n) => n.href === location.pathname)?.name ||
-                secondaryNavigation.find((n) => n.href === location.pathname)?.name ||
-                (location.pathname.startsWith("/beauticians/") ? "Beautician profile" : null) ||
-                (location.pathname.startsWith("/users/") ? "User profile" : null) ||
-                (location.pathname.startsWith("/appointments/") ? "Appointment details" : null) ||
-                "Dashboard"}
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/alerts")} title="Open alerts">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              {unreadAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
-                  {unreadAlerts > 99 ? "99+" : unreadAlerts}
-                </span>
-              )}
-            </Button>
-            <Separator orientation="vertical" className="h-8" />
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-xs font-medium text-primary-foreground">{user?.name?.charAt(0) ?? "A"}</span>
-              </div>
-              {!collapsed && (
-                <div className="hidden sm:flex flex-col">
-                  <span className="text-sm font-medium text-foreground">{isVendor ? "Vendor" : "Super Admin"}</span>
-                  <span className="text-xs text-muted-foreground">{user?.email ?? ""}</span>
-                </div>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => { logout(); navigate("/login"); }}
-                title="Logout"
-              >
-                <LogOut className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto p-6 scrollbar-thin">
-          {children}
-        </div>
+      <main className="min-w-0 flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-auto p-6 scrollbar-thin">{children}</div>
       </main>
+      </div>
     </div>
   );
 }

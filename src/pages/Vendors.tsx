@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { adminApi, type ApiVendor, type ApiCity } from "@/lib/api";
 import { DataTable } from "@/components/common/DataTable";
+import { EmbeddedReportsSection } from "@/components/reports/EmbeddedReportsSection";
 
 const Vendors = () => {
   const vendorPanelBaseUrl = import.meta.env.VITE_VENDOR_PANEL_URL || "";
@@ -47,6 +48,7 @@ const Vendors = () => {
   const [newCityId, setNewCityId] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [newPanelPassword, setNewPanelPassword] = useState("");
+  const [newPlatformCommissionPercent, setNewPlatformCommissionPercent] = useState("10");
   const [saving, setSaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState("");
@@ -56,6 +58,7 @@ const Vendors = () => {
   const [editCityId, setEditCityId] = useState("");
   const [editAddress, setEditAddress] = useState("");
   const [editPanelPassword, setEditPanelPassword] = useState("");
+  const [editPlatformCommissionPercent, setEditPlatformCommissionPercent] = useState("10");
   const [editSaving, setEditSaving] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<ApiVendor | null>(null);
@@ -98,6 +101,7 @@ const Vendors = () => {
         city: newCityId,
         address: newAddress.trim() || undefined,
         ...(newPanelPassword.trim().length >= 6 ? { panelPassword: newPanelPassword.trim() } : {}),
+        platformCommissionPercent: Math.min(100, Math.max(0, Number(newPlatformCommissionPercent) || 0)),
       });
       if (res.success) {
         setNewName("");
@@ -106,6 +110,7 @@ const Vendors = () => {
         setNewCityId("");
         setNewAddress("");
         setNewPanelPassword("");
+        setNewPlatformCommissionPercent("10");
         setDialogOpen(false);
         fetchVendors();
       }
@@ -175,6 +180,19 @@ const Vendors = () => {
                     onChange={(e) => setNewPanelPassword(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">Vendor uses this email + password to sign in here (vendor role).</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="vendorCommission">Platform commission (%)</Label>
+                  <Input
+                    id="vendorCommission"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    value={newPlatformCommissionPercent}
+                    onChange={(e) => setNewPlatformCommissionPercent(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">For this vendor&apos;s shop / vendor-side revenue (0–100).</p>
                 </div>
               </div>
               <DialogFooter>
@@ -293,6 +311,7 @@ const Vendors = () => {
                         setEditCityId(cid);
                         setEditAddress(vendor.address || "");
                         setEditPanelPassword("");
+                        setEditPlatformCommissionPercent(String(vendor.platformCommissionPercent ?? 10));
                         setEditOpen(true);
                       }}
                     >
@@ -314,7 +333,7 @@ const Vendors = () => {
 
         {/* View Vendor Dialog */}
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Vendor Details</DialogTitle>
               <DialogDescription>Overview of vendor information.</DialogDescription>
@@ -357,6 +376,12 @@ const Vendors = () => {
                     </p>
                   </div>
                   <div>
+                    <p className="text-xs text-muted-foreground">Platform commission</p>
+                    <p className="font-medium text-foreground">
+                      {selectedVendor.platformCommissionPercent ?? 10}%
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-xs text-muted-foreground">Vendor Panel</p>
                     {vendorPanelBaseUrl ? (
                       <Button
@@ -374,6 +399,11 @@ const Vendors = () => {
                     )}
                   </div>
                 </div>
+                <EmbeddedReportsSection
+                  vendorId={selectedVendor._id}
+                  title="Reports"
+                  className="border-t border-border pt-4 mt-4"
+                />
               </div>
             )}
             <DialogFooter>
@@ -432,6 +462,17 @@ const Vendors = () => {
                   onChange={(e) => setEditPanelPassword(e.target.value)}
                 />
               </div>
+              <div className="grid gap-2">
+                <Label>Platform commission (%)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={editPlatformCommissionPercent}
+                  onChange={(e) => setEditPlatformCommissionPercent(e.target.value)}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditOpen(false)}>
@@ -450,6 +491,7 @@ const Vendors = () => {
                       address: editAddress.trim() || undefined,
                     };
                     if (editPanelPassword.trim().length >= 6) body.panelPassword = editPanelPassword.trim();
+                    body.platformCommissionPercent = Math.min(100, Math.max(0, Number(editPlatformCommissionPercent) || 0));
                     const res = await adminApi.updateVendor(editId, body);
                     if (res.success) {
                       setEditOpen(false);

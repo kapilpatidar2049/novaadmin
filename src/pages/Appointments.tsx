@@ -11,6 +11,8 @@ import { DataTable } from "@/components/common/DataTable";
 const statusLabels: Record<string, string> = {
   pending: "Pending",
   accepted: "Accepted",
+  in_transit: "On the way",
+  reached: "Arrived (OTP)",
   in_progress: "In Progress",
   completed: "Completed",
   cancelled: "Cancelled",
@@ -20,6 +22,8 @@ const statusLabels: Record<string, string> = {
 const statusColors: Record<string, string> = {
   pending: "bg-warning/10 text-warning",
   accepted: "bg-accent/10 text-accent",
+  in_transit: "bg-info/10 text-info",
+  reached: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
   in_progress: "bg-primary/10 text-primary",
   completed: "bg-success/10 text-success",
   cancelled: "bg-destructive/10 text-destructive",
@@ -109,6 +113,8 @@ const Appointments = () => {
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="in_transit">On the way</SelectItem>
+                <SelectItem value="reached">Arrived</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>

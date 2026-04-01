@@ -53,6 +53,7 @@ const Beauticians = () => {
   const [newPhone, setNewPhone] = useState("");
   const [newCityId, setNewCityId] = useState("");
   const [newVendorId, setNewVendorId] = useState("");
+  const [newPlatformCommissionPercent, setNewPlatformCommissionPercent] = useState("10");
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -117,6 +118,7 @@ const Beauticians = () => {
         phone: newPhone.trim() || undefined,
         vendorId: newVendorId,
         cityId: newCityId || undefined,
+        platformCommissionPercent: Math.min(100, Math.max(0, Number(newPlatformCommissionPercent) || 0)),
       });
       if (res.success && res.data) {
         setBeauticians((prev) => [res.data!, ...prev]);
@@ -126,6 +128,7 @@ const Beauticians = () => {
         setNewPhone("");
         setNewCityId("");
         setNewVendorId("");
+        setNewPlatformCommissionPercent("10");
         setDialogOpen(false);
       }
     } finally {
@@ -200,6 +203,19 @@ const Beauticians = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="newBeauticianCommission">Platform commission (%)</Label>
+                  <Input
+                    id="newBeauticianCommission"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    value={newPlatformCommissionPercent}
+                    onChange={(e) => setNewPlatformCommissionPercent(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">For this beautician (0–100). You can change it later on their profile.</p>
                 </div>
               </div>
               <DialogFooter>
