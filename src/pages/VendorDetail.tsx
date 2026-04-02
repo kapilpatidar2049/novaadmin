@@ -12,7 +12,6 @@ import { AppointmentHistoryPanel } from "@/components/detail/AppointmentHistoryP
 const VendorDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const vendorPanelBaseUrl = import.meta.env.VITE_VENDOR_PANEL_URL || "";
   const [vendor, setVendor] = useState<ApiVendor | null>(null);
   const [loading, setLoading] = useState(true);
   const [linkedBeauticians, setLinkedBeauticians] = useState<ApiBeautician[]>([]);
@@ -35,11 +34,10 @@ const VendorDetail = () => {
     if (!vendor?._id) return;
     setLoadingLinkedBeauticians(true);
     adminApi
-      .getBeauticians(1, 500, "")
+      .getBeauticians(1, 200, "", "", vendor._id)
       .then((res) => {
         if (res.success && res.data?.items) {
-          const items = res.data.items.filter((b) => String(b.vendorId) === String(vendor._id));
-          setLinkedBeauticians(items);
+          setLinkedBeauticians(res.data.items);
         } else {
           setLinkedBeauticians([]);
         }
@@ -142,23 +140,6 @@ const VendorDetail = () => {
                 </p>
               </li>
             </ul>
-            <div className="mt-4 border-t border-border pt-4">
-              <p className="mb-1 text-xs text-muted-foreground">Vendor panel</p>
-              {vendorPanelBaseUrl ? (
-                <Button
-                  variant="link"
-                  className="h-auto p-0"
-                  onClick={() => {
-                    const url = `${vendorPanelBaseUrl.replace(/\/$/, "")}/?vendor=${vendor._id}`;
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  }}
-                >
-                  Open vendor panel
-                </Button>
-              ) : (
-                <p className="text-sm text-muted-foreground">Set `VITE_VENDOR_PANEL_URL` to enable.</p>
-              )}
-            </div>
           </div>
         </div>
 

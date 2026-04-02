@@ -448,9 +448,15 @@ export const adminApi = {
   },
   deleteService: (id: string) =>
     request(`/admin/services/${id}`, { method: "DELETE" }),
-  getBeauticians: (page = 1, limit = 100, search = "", cityId = "") =>
+  getBeauticians: (page = 1, limit = 100, search = "", cityId = "", vendorId = "") =>
     request<{ items: ApiBeautician[]; meta: { page: number; limit: number; total: number } }>("/admin/beauticians", {
-      params: { page: String(page), limit: String(limit), search, cityId },
+      params: {
+        page: String(page),
+        limit: String(limit),
+        ...(search ? { search } : {}),
+        ...(cityId ? { cityId } : {}),
+        ...(vendorId ? { vendorId } : {}),
+      },
     }),
   getBeauticianById: (id: string) =>
     request<ApiBeauticianDetail>(`/admin/beauticians/${id}`),
