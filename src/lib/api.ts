@@ -117,6 +117,7 @@ export interface ApiVendor {
   city: ApiCity | string;
   address?: string;
   isActive?: boolean;
+  /** Vendor's share (%) of each beautician's earnings under this vendor — settlement to vendor. Field name is legacy. */
   platformCommissionPercent?: number;
 }
 
@@ -342,6 +343,7 @@ export const adminApi = {
     request<{ items: ApiVendor[]; meta: { page: number; limit: number; total: number } }>("/admin/vendors", {
       params: { page: String(page), limit: String(limit), search, cityId },
     }),
+  getVendorById: (id: string) => request<ApiVendor>(`/admin/vendors/${id}`),
   createVendor: (body: {
     name: string;
     email: string;
@@ -483,14 +485,22 @@ export const adminApi = {
     if (scope?.vendorId) params.vendorId = scope.vendorId;
     return request<{ payments: unknown[] }>("/admin/reports", { params });
   },
-  getAppointments: (page = 1, limit = 50, status = "", customerId = "", beauticianId = "") =>
+  getAppointments: (
+    page = 1,
+    limit = 50,
+    status = "",
+    customerId = "",
+    beauticianId = "",
+    vendorId = "",
+  ) =>
     request<{ items: ApiAppointmentSummary[]; meta: { page: number; limit: number; total: number } }>("/admin/appointments", {
       params: {
         page: String(page),
         limit: String(limit),
-        status,
-        customerId,
-        beauticianId,
+        ...(status ? { status } : {}),
+        ...(customerId ? { customerId } : {}),
+        ...(beauticianId ? { beauticianId } : {}),
+        ...(vendorId ? { vendorId } : {}),
       },
     }),
   getAppointmentById: (id: string) =>

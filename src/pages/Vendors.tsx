@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Store, Eye, MoreHorizontal } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Search, Store, MoreHorizontal } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,10 +30,9 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { adminApi, type ApiVendor, type ApiCity } from "@/lib/api";
 import { DataTable } from "@/components/common/DataTable";
-import { EmbeddedReportsSection } from "@/components/reports/EmbeddedReportsSection";
 
 const Vendors = () => {
-  const vendorPanelBaseUrl = import.meta.env.VITE_VENDOR_PANEL_URL || "";
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [vendors, setVendors] = useState<ApiVendor[]>([]);
@@ -60,9 +60,6 @@ const Vendors = () => {
   const [editPanelPassword, setEditPanelPassword] = useState("");
   const [editPlatformCommissionPercent, setEditPlatformCommissionPercent] = useState("10");
   const [editSaving, setEditSaving] = useState(false);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState<ApiVendor | null>(null);
-
   const fetchVendors = useCallback(async () => {
     setLoading(true);
     const res = await adminApi.getVendors(page, pageSize, searchQuery, cityFilter === "all" ? "" : cityFilter);
@@ -182,7 +179,7 @@ const Vendors = () => {
                   <p className="text-xs text-muted-foreground">Vendor uses this email + password to sign in here (vendor role).</p>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="vendorCommission">Platform commission (%)</Label>
+                  <Label htmlFor="vendorCommission">Vendor commission (%)</Label>
                   <Input
                     id="vendorCommission"
                     type="number"
@@ -192,7 +189,9 @@ const Vendors = () => {
                     value={newPlatformCommissionPercent}
                     onChange={(e) => setNewPlatformCommissionPercent(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">For this vendor&apos;s shop / vendor-side revenue (0–100).</p>
+                  <p className="text-xs text-muted-foreground">
+                    This vendor receives this percentage of the earnings their beauticians make from bookings (0–100).
+                  </p>
                 </div>
               </div>
               <DialogFooter>
@@ -292,14 +291,8 @@ const Vendors = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedVendor(vendor);
-                        setViewDialogOpen(true);
-                      }}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
+                    <DropdownMenuItem onClick={() => navigate(`/vendors/${vendor._id}`)}>
+                      View details
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
@@ -330,89 +323,6 @@ const Vendors = () => {
           onPageChange={setPage}
           emptyMessage="No vendors found."
         />
-
-        {/* View Vendor Dialog */}
-        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Vendor Details</DialogTitle>
-              <DialogDescription>Overview of vendor information.</DialogDescription>
-            </DialogHeader>
-            {selectedVendor && (
-              <div className="space-y-3 py-2">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium text-sm">
-                    {selectedVendor.name.split(" ").map((n) => n[0]).join("")}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{selectedVendor.name}</p>
-                    <p className="text-xs text-muted-foreground">{selectedVendor.email}</p>
-                    {selectedVendor.phone && (
-                      <p className="text-xs text-muted-foreground">{selectedVendor.phone}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-2 text-sm">
-                  <div>
-                    <p className="text-xs text-muted-foreground">City</p>
-                    <p className="font-medium text-foreground">
-                      {typeof selectedVendor.city === "object"
-                        ? selectedVendor.city?.name
-                        : selectedVendor.city || "-"}
-                    </p>
-                  </div>
-                  {selectedVendor.address && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Address</p>
-                      <p className="font-medium text-foreground break-words">
-                        {selectedVendor.address}
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-xs text-muted-foreground">Status</p>
-                    <p className="font-medium text-foreground">
-                      {selectedVendor.isActive !== false ? "Active" : "Inactive"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Platform commission</p>
-                    <p className="font-medium text-foreground">
-                      {selectedVendor.platformCommissionPercent ?? 10}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Vendor Panel</p>
-                    {vendorPanelBaseUrl ? (
-                      <Button
-                        variant="link"
-                        className="p-0 h-auto"
-                        onClick={() => {
-                          const url = `${vendorPanelBaseUrl.replace(/\/$/, "")}/?vendor=${selectedVendor._id}`;
-                          window.open(url, "_blank", "noopener,noreferrer");
-                        }}
-                      >
-                        Open vendor panel
-                      </Button>
-                    ) : (
-                      <p className="font-medium text-foreground">Not configured (`VITE_VENDOR_PANEL_URL`)</p>
-                    )}
-                  </div>
-                </div>
-                <EmbeddedReportsSection
-                  vendorId={selectedVendor._id}
-                  title="Reports"
-                  className="border-t border-border pt-4 mt-4"
-                />
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
@@ -463,7 +373,7 @@ const Vendors = () => {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Platform commission (%)</Label>
+                <Label>Vendor commission (%)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -472,6 +382,9 @@ const Vendors = () => {
                   value={editPlatformCommissionPercent}
                   onChange={(e) => setEditPlatformCommissionPercent(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  This vendor&apos;s share of their beauticians&apos; earnings from bookings (0–100).
+                </p>
               </div>
             </div>
             <DialogFooter>

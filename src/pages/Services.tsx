@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Scissors, Edit, MoreHorizontal, DollarSign, Clock } from "lucide-react";
+import { Plus, Search, Scissors, Edit, MoreHorizontal, DollarSign, Clock, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { adminApi, type ApiService, type ApiCategory } from "@/lib/api";
 import { DataTable } from "@/components/common/DataTable";
+import { toast } from "sonner";
 
 const Services = () => {
   const navigate = useNavigate();
@@ -58,6 +59,17 @@ const Services = () => {
   const filteredServices = services.filter((service) => {
     return service.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  const handleDeleteService = async (service: ApiService) => {
+    if (!confirm(`Delete "${service.name}" service?`)) return;
+    try {
+      await adminApi.deleteService(service._id);
+      toast.success("Service deleted");
+      fetchServices();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete service");
+    }
+  };
 
   return (
     <AdminLayout>
@@ -216,6 +228,13 @@ const Services = () => {
                     <DropdownMenuItem onClick={() => navigate(`/services/${service._id}/edit`, { state: { service } })}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Service
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => handleDeleteService(service)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Service
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

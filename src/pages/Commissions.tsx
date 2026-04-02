@@ -11,7 +11,8 @@ const Commissions = () => {
           <div>
             <h1 className="page-title">Commissions</h1>
             <p className="page-description">
-              Platform commission is set separately for each beautician and each vendor (percentage of relevant revenue, 0–100%).
+              Platform fee is set per beautician (share of service revenue for the platform). Vendor commission is set per
+              vendor: it is the percentage of the vendor&apos;s beauticians&apos; earnings that is credited to the vendor.
               There is no single global rate—open a profile to view or change it.
             </p>
           </div>
@@ -45,7 +46,8 @@ const Commissions = () => {
             <div>
               <h2 className="text-lg font-semibold text-foreground">Per-vendor commission</h2>
               <p className="text-sm text-muted-foreground">
-                Stored on each vendor for vendor-side revenue (e.g. product shop). Set when adding or editing a vendor.
+                How much of each beautician&apos;s earnings (under that vendor) goes to the vendor—set when adding or
+                editing a vendor (0–100%).
               </p>
             </div>
           </div>

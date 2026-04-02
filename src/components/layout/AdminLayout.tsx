@@ -85,6 +85,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             {navigation.find((n) => n.href === location.pathname)?.name ||
               secondaryNavigation.find((n) => n.href === location.pathname)?.name ||
               (location.pathname.startsWith("/beauticians/") ? "Beautician profile" : null) ||
+              (location.pathname.startsWith("/vendors/") ? "Vendor profile" : null) ||
               (location.pathname.startsWith("/users/") ? "User profile" : null) ||
               (location.pathname.startsWith("/appointments/") ? "Appointment details" : null) ||
               "Dashboard"}

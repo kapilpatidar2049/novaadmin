@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Cities from "./pages/Cities";
 import Vendors from "./pages/Vendors";
+import VendorDetail from "./pages/VendorDetail";
 import Beauticians from "./pages/Beauticians";
 import BeauticianDetail from "./pages/BeauticianDetail";
 import Users from "./pages/Users";
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/cities" element={<ProtectedRoute><RequireSuperAdmin><Cities /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/vendors" element={<ProtectedRoute><RequireSuperAdmin><Vendors /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/vendors/:id" element={<ProtectedRoute><RequireSuperAdmin><VendorDetail /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/beauticians" element={<ProtectedRoute><Beauticians /></ProtectedRoute>} />
               <Route path="/beauticians/:id" element={<ProtectedRoute><BeauticianDetail /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />

@@ -66,15 +66,21 @@ const Appointments = () => {
     fetchAppointments();
   }, [fetchAppointments]);
 
+  const hasAssignedBeautician = (appt: ApiAppointmentSummary) =>
+    appt.status !== "pending" && Boolean(appt.beautician);
+
   const filtered = appointments.filter((a) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const customerMatch =
         a.customer.name.toLowerCase().includes(q) ||
         a.customer.phone.toLowerCase().includes(q);
-      const beauticianMatch =
-        a.beautician?.name.toLowerCase().includes(q) ||
-        a.beautician?.phone.toLowerCase().includes(q);
+      const beauticianMatch = hasAssignedBeautician(a)
+        ? Boolean(
+            a.beautician?.name.toLowerCase().includes(q) ||
+              a.beautician?.phone.toLowerCase().includes(q),
+          )
+        : false;
       const serviceMatch = a.service.name.toLowerCase().includes(q);
       return customerMatch || beauticianMatch || serviceMatch || a.id.toLowerCase().includes(q);
     }
@@ -164,16 +170,18 @@ const Appointments = () => {
             {
               key: "beautician",
               header: "Beautician",
-              render: (appt) => (
-                <div className="flex items-center gap-2 text-sm text-foreground">
-                  <Scissors className="h-4 w-4 text-muted-foreground" />
-                  {appt.beautician ? (
+              render: (appt) => {
+                const showAssignedBeautician = hasAssignedBeautician(appt);
+                return (
+                  <div className="flex items-center gap-2 text-sm text-foreground">
+                    <Scissors className="h-4 w-4 text-muted-foreground" />
+                    {showAssignedBeautician ? (
                     <div className="flex flex-col">
                       <span className="font-medium">
-                        {appt.beautician.name || "—"}
+                        {appt.beautician?.name || "—"}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {appt.beautician.phone || "—"}
+                        {appt.beautician?.phone || "—"}
                       </span>
                     </div>
                   ) : (
@@ -181,8 +189,9 @@ const Appointments = () => {
                       Not yet assigned
                     </span>
                   )}
-                </div>
-              ),
+                  </div>
+                );
+              },
             },
             {
               key: "service",

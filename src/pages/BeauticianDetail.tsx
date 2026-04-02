@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
   Scissors,
@@ -17,6 +17,9 @@ import {
   Shield,
   CheckCircle2,
   XCircle,
+  History,
+  Landmark,
+  ArrowDownToLine,
 } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -34,6 +37,8 @@ import { adminApi, type ApiBeauticianDetail } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { EmbeddedReportsSection } from "@/components/reports/EmbeddedReportsSection";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AppointmentHistoryPanel } from "@/components/detail/AppointmentHistoryPanel";
 
 const BeauticianDetail = () => {
   const { isVendor } = useAuth();
@@ -257,13 +262,63 @@ const BeauticianDetail = () => {
           </div>
         </div>
 
+        {/* Tabs: history, earnings, bank, withdrawals — directly under profile stats */}
         {id && (
-          <div className="bg-card rounded-lg border border-border p-6">
-            <EmbeddedReportsSection beauticianId={id} title="Reports" />
+          <div className="bg-card rounded-lg border border-border p-4 sm:p-6">
+            <Tabs defaultValue="appointments" className="w-full">
+              <TabsList className="flex h-auto min-h-10 w-full flex-wrap gap-1 justify-start p-1">
+                <TabsTrigger value="appointments" className="gap-1.5">
+                  <History className="h-4 w-4 shrink-0" />
+                  Appointment history
+                </TabsTrigger>
+                <TabsTrigger value="earnings" className="gap-1.5">
+                  <DollarSign className="h-4 w-4 shrink-0" />
+                  Earnings
+                </TabsTrigger>
+                <TabsTrigger value="bank" className="gap-1.5">
+                  <Landmark className="h-4 w-4 shrink-0" />
+                  Bank details
+                </TabsTrigger>
+                <TabsTrigger value="withdrawals" className="gap-1.5">
+                  <ArrowDownToLine className="h-4 w-4 shrink-0" />
+                  Withdrawal requests
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="appointments" className="mt-4">
+                <AppointmentHistoryPanel beauticianId={id} />
+              </TabsContent>
+              <TabsContent value="earnings" className="mt-4 space-y-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="stat-card">
+                    <p className="stat-card-label">Total earnings (all time)</p>
+                    <p className="text-xl font-bold text-foreground">₹{detail.totalEarnings.toLocaleString()}</p>
+                  </div>
+                  <div className="stat-card">
+                    <p className="stat-card-label">Wallet balance</p>
+                    <p className="text-xl font-bold text-foreground">₹{(detail.walletBalance ?? 0).toLocaleString()}</p>
+                  </div>
+                </div>
+                <EmbeddedReportsSection beauticianId={id} title="Payment reports" />
+              </TabsContent>
+              <TabsContent value="bank" className="mt-4">
+                <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
+                  <Landmark className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60" />
+                  <p className="mb-1 font-medium text-foreground">No bank details on server</p>
+                  <p>The beautician app stores bank details on the device only until sync is enabled.</p>
+                </div>
+              </TabsContent>
+              <TabsContent value="withdrawals" className="mt-4">
+                <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
+                  <ArrowDownToLine className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60" />
+                  <p className="mb-1 font-medium text-foreground">No withdrawal requests</p>
+                  <p>Withdrawal requests will appear here when the payout feature is connected.</p>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 
-        {/* Info grid */}
+        {/* Info grid — extended profile details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-card rounded-lg border border-border p-4">
             <h3 className="font-medium text-foreground mb-2">Details</h3>
@@ -273,10 +328,16 @@ const BeauticianDetail = () => {
                 <span className="text-muted-foreground">City:</span>
                 <span className="text-foreground">{detail.city || "—"}</span>
               </li>
-              <li className="flex items-center gap-2">
-                <Store className="h-4 w-4 text-muted-foreground" />
+              <li className="flex items-center gap-2 flex-wrap">
+                <Store className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-muted-foreground">Vendor:</span>
-                <span className="text-foreground">{detail.vendor || "—"}</span>
+                {detail.vendorId ? (
+                  <Link to={`/vendors/${detail.vendorId}`} className="text-primary font-medium hover:underline">
+                    {detail.vendor || "—"}
+                  </Link>
+                ) : (
+                  <span className="text-foreground">{detail.vendor || "—"}</span>
+                )}
               </li>
               <li className="flex items-center gap-2">
                 <Scissors className="h-4 w-4 text-muted-foreground" />
