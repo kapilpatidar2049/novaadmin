@@ -181,9 +181,11 @@ const Users = () => {
               render: (user) => (
                 <span className="text-sm font-medium text-foreground">
                   {user.role === "beautician"
-                    ? user.walletBalance != null
-                      ? `₹${user.walletBalance.toLocaleString()}`
-                      : "—"
+                    ? user.totalEarnings != null
+                      ? `₹${user.totalEarnings.toLocaleString()}`
+                      : user.walletBalance != null
+                        ? `₹${user.walletBalance.toLocaleString()}`
+                        : "—"
                     : user.totalSpent != null
                       ? `₹${user.totalSpent.toLocaleString()}`
                       : "—"}

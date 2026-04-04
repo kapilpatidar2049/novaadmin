@@ -210,6 +210,8 @@ export interface ApiUser {
   totalBookings?: number;
   totalJobs?: number;
   totalSpent?: number;
+  /** Lifetime service revenue from completed jobs (beauticians) */
+  totalEarnings?: number;
   rating?: number;
   walletBalance?: number;
   createdAt: string;
