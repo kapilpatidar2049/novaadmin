@@ -32,13 +32,18 @@ const Services = () => {
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [total, setTotal] = useState(0);
+  const [activeTotal, setActiveTotal] = useState(0);
+  const [avgBasePrice, setAvgBasePrice] = useState(0);
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
     const res = await adminApi.getServices(page, pageSize, searchQuery);
     if (res.success && res.data?.items) {
       setServices(res.data.items);
-      setTotal(res.data.meta.total);
+      const m = res.data.meta;
+      setTotal(m.total);
+      setActiveTotal(typeof m.activeTotal === "number" ? m.activeTotal : 0);
+      setAvgBasePrice(typeof m.avgBasePrice === "number" ? m.avgBasePrice : 0);
     }
     setLoading(false);
   }, [searchQuery, page]);
@@ -95,7 +100,7 @@ const Services = () => {
               </div>
               <div>
                 <p className="stat-card-label">Total Services</p>
-                <p className="text-2xl font-bold text-foreground">{services.length}</p>
+                <p className="text-2xl font-bold text-foreground">{total}</p>
               </div>
             </div>
           </div>
@@ -108,9 +113,7 @@ const Services = () => {
               </div>
               <div>
                 <p className="stat-card-label">Active Services</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {services.filter((s) => s.status === "active").length}
-                </p>
+                <p className="text-2xl font-bold text-foreground">{activeTotal}</p>
               </div>
             </div>
           </div>
@@ -122,7 +125,7 @@ const Services = () => {
               <div>
                 <p className="stat-card-label">Avg Base Price</p>
                 <p className="text-2xl font-bold text-foreground">
-                  ₹{Math.round(services.reduce((sum, s) => sum + s.basePrice, 0) / services.length)}
+                  ₹{total > 0 ? avgBasePrice : "—"}
                 </p>
               </div>
             </div>

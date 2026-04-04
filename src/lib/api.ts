@@ -412,7 +412,10 @@ export const adminApi = {
   deleteCategory: (id: string) =>
     request(`/admin/categories/${id}`, { method: "DELETE" }),
   getServices: (page = 1, limit = 50, search = "") =>
-    request<{ items: ApiService[]; meta: { page: number; limit: number; total: number } }>("/admin/services", {
+    request<{
+      items: ApiService[];
+      meta: { page: number; limit: number; total: number; totalPages?: number; activeTotal: number; avgBasePrice: number };
+    }>("/admin/services", {
       params: { page: String(page), limit: String(limit), search },
     }),
   createService: (body: { name: string; category?: string; description?: string; includes?: string[]; experts?: string[]; basePrice: number; durationMinutes: number; imageFile?: File | null; imageUrl?: string }) => {
