@@ -11,8 +11,10 @@ import Dashboard from "./pages/Dashboard";
 import Cities from "./pages/Cities";
 import Vendors from "./pages/Vendors";
 import VendorDetail from "./pages/VendorDetail";
+import VendorFinancials from "./pages/VendorFinancials";
 import Beauticians from "./pages/Beauticians";
 import BeauticianDetail from "./pages/BeauticianDetail";
+import BeauticianFinancials from "./pages/BeauticianFinancials";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
 import Services from "./pages/Services";
@@ -30,6 +32,7 @@ import Appointments from "./pages/Appointments";
 import AppointmentDetail from "./pages/AppointmentDetail";
 import Inventory from "./pages/Inventory";
 import ProductOrders from "./pages/ProductOrders";
+import Invoice from "./pages/Invoice";
 
 const queryClient = new QueryClient();
 
@@ -60,8 +63,10 @@ const App = () => (
               <Route path="/cities" element={<ProtectedRoute><RequireSuperAdmin><Cities /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/vendors" element={<ProtectedRoute><RequireSuperAdmin><Vendors /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/vendors/:id" element={<ProtectedRoute><RequireSuperAdmin><VendorDetail /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/vendors/:id/financials" element={<ProtectedRoute><RequireSuperAdmin><VendorFinancials /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/beauticians" element={<ProtectedRoute><Beauticians /></ProtectedRoute>} />
               <Route path="/beauticians/:id" element={<ProtectedRoute><BeauticianDetail /></ProtectedRoute>} />
+              <Route path="/beauticians/:id/financials" element={<ProtectedRoute><BeauticianFinancials /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
               <Route path="/users/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
               <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
@@ -73,13 +78,14 @@ const App = () => (
               <Route path="/services/:id/edit" element={<ProtectedRoute><RequireSuperAdmin><ServiceForm /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/banners" element={<ProtectedRoute><RequireSuperAdmin><Banners /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/categories" element={<ProtectedRoute><RequireSuperAdmin><Categories /></RequireSuperAdmin></ProtectedRoute>} />
-              <Route path="/reports" element={<ProtectedRoute><RequireSuperAdmin><Reports /></RequireSuperAdmin></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/payments" element={<ProtectedRoute><RequireSuperAdmin><Payments /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
+              <Route path="/invoices/:id" element={<ProtectedRoute><Invoice /></ProtectedRoute>} />
               <Route path="/referral" element={<ProtectedRoute><RequireSuperAdmin><Referral /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/commissions" element={<ProtectedRoute><RequireSuperAdmin><Commissions /></RequireSuperAdmin></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><RequireSuperAdmin><Settings /></RequireSuperAdmin></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
             </Routes>
           </HashRouter>
         </AuthProvider>

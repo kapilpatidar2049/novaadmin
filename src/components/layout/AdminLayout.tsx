@@ -22,6 +22,7 @@ import {
   ShoppingCart,
   Gift,
   Percent,
+  Landmark,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -48,10 +49,11 @@ const allNavigation = [
   { name: "Product orders", href: "/product-orders", icon: ShoppingCart },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Payments", href: "/payments", icon: CreditCard },
+  { name: "Withdrawals", href: "/withdrawals", icon: Landmark },
   { name: "Alerts", href: "/alerts", icon: Bell },
 ];
 
-const vendorNavHrefs = new Set(["/", "/appointments", "/beauticians", "/users", "/alerts", "/inventory", "/product-orders"]);
+const vendorNavHrefs = new Set(["/", "/appointments", "/beauticians", "/users", "/alerts", "/inventory", "/product-orders", "/reports", "/withdrawals"]);
 
 const secondaryNavigationAll = [
   { name: "Referral", href: "/referral", icon: Gift },

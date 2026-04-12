@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Scissors, Eye, MoreHorizontal, MapPin, Phone, Star } from "lucide-react";
+import { Plus, Search, Scissors, Eye, MoreHorizontal, MapPin, Phone, Star, BarChart } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,7 @@ const Beauticians = () => {
   const [newCityId, setNewCityId] = useState("");
   const [newVendorId, setNewVendorId] = useState("");
   const [newPlatformCommissionPercent, setNewPlatformCommissionPercent] = useState("10");
+  const [newSalaryType, setNewSalaryType] = useState("commission");
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -108,18 +109,32 @@ const Beauticians = () => {
   };
 
   const handleAddBeautician = async () => {
-    if (!newName.trim() || !newEmail.trim() || !newVendorId) return;
+    if (!newName.trim() || !newEmail.trim()) return;
+    if (!isVendor && !newVendorId) return;
+    
     setSaving(true);
     try {
-      const res = await adminApi.createBeautician({
+      const payload = {
         name: newName.trim(),
         email: newEmail.trim(),
         password: newPassword || undefined,
         phone: newPhone.trim() || undefined,
-        vendorId: newVendorId,
-        cityId: newCityId || undefined,
-        platformCommissionPercent: Math.min(100, Math.max(0, Number(newPlatformCommissionPercent) || 0)),
-      });
+        salaryType: newSalaryType,
+      };
+
+      let res;
+      if (isVendor) {
+        const { vendorApi } = await import("@/lib/api");
+        res = await vendorApi.createBeautician(payload);
+      } else {
+        res = await adminApi.createBeautician({
+          ...payload,
+          vendorId: newVendorId,
+          cityId: newCityId || undefined,
+          platformCommissionPercent: Math.min(100, Math.max(0, Number(newPlatformCommissionPercent) || 0)),
+        });
+      }
+
       if (res.success && res.data) {
         setBeauticians((prev) => [res.data!, ...prev]);
         setNewName("");
@@ -129,6 +144,7 @@ const Beauticians = () => {
         setNewCityId("");
         setNewVendorId("");
         setNewPlatformCommissionPercent("10");
+        setNewSalaryType("commission");
         setDialogOpen(false);
       }
     } finally {
@@ -144,7 +160,6 @@ const Beauticians = () => {
             <h1 className="page-title">Beautician Management</h1>
             <p className="page-description">Track and manage all beauticians across cities</p>
           </div>
-          {!isVendor && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -174,49 +189,67 @@ const Beauticians = () => {
                   <Label htmlFor="beauticianPhone">Phone</Label>
                   <Input id="beauticianPhone" placeholder="+91 98765 43210" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
                 </div>
+                
                 <div className="grid gap-2">
-                  <Label>Vendor / Salon</Label>
-                  <Select value={newVendorId} onValueChange={setNewVendorId}>
+                  <Label>Salary Type</Label>
+                  <Select value={newSalaryType} onValueChange={setNewSalaryType}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select vendor" />
+                      <SelectValue placeholder="Select salary type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {vendors.map((v) => (
-                        <SelectItem key={v._id} value={v._id}>
-                          {v.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="commission">Commission Based</SelectItem>
+                      <SelectItem value="salaried">Salaried (Full time)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-2">
-                  <Label>City</Label>
-                  <Select value={newCityId} onValueChange={setNewCityId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select city (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cityOptions.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="newBeauticianCommission">Platform commission (%)</Label>
-                  <Input
-                    id="newBeauticianCommission"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    value={newPlatformCommissionPercent}
-                    onChange={(e) => setNewPlatformCommissionPercent(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">For this beautician (0–100). You can change it later on their profile.</p>
-                </div>
+
+                {!isVendor && (
+                  <>
+                    <div className="grid gap-2">
+                      <Label>Vendor / Salon</Label>
+                      <Select value={newVendorId} onValueChange={setNewVendorId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vendor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vendors.map((v) => (
+                            <SelectItem key={v._id} value={v._id}>
+                              {v.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>City</Label>
+                      <Select value={newCityId} onValueChange={setNewCityId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select city (optional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cityOptions.map((c) => (
+                            <SelectItem key={c.value} value={c.value}>
+                              {c.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="newBeauticianCommission">Platform commission (%)</Label>
+                      <Input
+                        id="newBeauticianCommission"
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={newPlatformCommissionPercent}
+                        onChange={(e) => setNewPlatformCommissionPercent(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">For this beautician (0–100).</p>
+                    </div>
+                  </>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
@@ -226,7 +259,6 @@ const Beauticians = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -416,6 +448,10 @@ const Beauticians = () => {
                     <DropdownMenuItem onClick={() => navigate(`/beauticians/${b.id}`)}>
                       <Eye className="h-4 w-4 mr-2" />
                       View full profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/beauticians/${b.id}/financials`)}>
+                      <BarChart className="h-4 w-4 mr-2" />
+                      Financial Report
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleTrackLocation(b.id)}>
                       <MapPin className="h-4 w-4 mr-2" />

@@ -7,9 +7,11 @@ import { RevenueChart, CityRevenueChart, ServiceDistributionChart } from "@/comp
 import { RecentAlerts } from "@/components/dashboard/RecentAlerts";
 import { TopVendorsTable } from "@/components/dashboard/TopVendorsTable";
 import { adminApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import alertSound from "@/alert.mp3";
 
 function useDashboardStats() {
+  const { isVendor } = useAuth();
   const [stats, setStats] = useState<Array<{ title: string; value: string; change: number; icon: typeof Users; iconColor: string }>>([
     { title: "Total Cities", value: "—", change: 0, icon: Store, iconColor: "bg-primary/10 text-primary" },
     { title: "Vendors", value: "—", change: 0, icon: Store, iconColor: "bg-success/10 text-success" },
@@ -20,15 +22,24 @@ function useDashboardStats() {
     adminApi.getDashboard().then((res) => {
       if (res.success && res.data) {
         const d = res.data;
-        setStats([
-          { title: "Total Cities", value: String(d.totalCities), change: 0, icon: Store, iconColor: "bg-primary/10 text-primary" },
-          { title: "Vendors", value: String(d.totalVendors), change: 0, icon: Store, iconColor: "bg-success/10 text-success" },
-          { title: "Services", value: String(d.totalServices), change: 0, icon: Scissors, iconColor: "bg-accent/10 text-accent" },
-          { title: "Paid Payments", value: String(d.totalPaidPayments), change: 0, icon: DollarSign, iconColor: "bg-warning/10 text-warning" },
-        ]);
+        if (isVendor) {
+          setStats([
+            { title: "Your City", value: d.topVendors?.[0]?.city || "Active", change: 0, icon: Store, iconColor: "bg-primary/10 text-primary" },
+            { title: "Team Size", value: String(d.topVendors?.[0]?.beauticians || 0), change: 0, icon: Scissors, iconColor: "bg-success/10 text-success" },
+            { title: "Services", value: String(d.totalServices), change: 0, icon: Scissors, iconColor: "bg-accent/10 text-accent" },
+            { title: "Paid Payments", value: String(d.totalPaidPayments), change: 0, icon: DollarSign, iconColor: "bg-warning/10 text-warning" },
+          ]);
+        } else {
+          setStats([
+            { title: "Total Cities", value: String(d.totalCities), change: 0, icon: Store, iconColor: "bg-primary/10 text-primary" },
+            { title: "Vendors", value: String(d.totalVendors), change: 0, icon: Store, iconColor: "bg-success/10 text-success" },
+            { title: "Services", value: String(d.totalServices), change: 0, icon: Scissors, iconColor: "bg-accent/10 text-accent" },
+            { title: "Paid Payments", value: String(d.totalPaidPayments), change: 0, icon: DollarSign, iconColor: "bg-warning/10 text-warning" },
+          ]);
+        }
       }
     });
-  }, []);
+  }, [isVendor]);
   return stats;
 }
 

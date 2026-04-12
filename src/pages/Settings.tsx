@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Shield, Lock, Eye, Globe } from "lucide-react";
+import { Shield, Lock, Eye, Globe, MapPin } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { adminApi } from "@/lib/api";
 
 const Settings = () => {
   const [saving, setSaving] = useState(false);
@@ -18,7 +19,26 @@ const Settings = () => {
     vendorRegistrationAlerts: false,
   });
 
+  const [maxDistance, setMaxDistance] = useState(10);
+  const [gstPercent, setGstPercent] = useState(0);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const sysSettings = await adminApi.getSystemSettings();
+        if (sysSettings) {
+          if (typeof sysSettings.beauticianMaxDistanceKm === 'number') setMaxDistance(sysSettings.beauticianMaxDistanceKm);
+          if (typeof sysSettings.gstPercent === 'number') setGstPercent(sysSettings.gstPercent);
+        }
+      } catch (e) {
+        console.error("Failed to load system settings", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+
     const raw = localStorage.getItem("admin_settings");
     if (!raw) return;
     try {
@@ -32,10 +52,19 @@ const Settings = () => {
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
-    await new Promise((r) => setTimeout(r, 250));
-    localStorage.setItem("admin_settings", JSON.stringify(settings));
-    setSaving(false);
-    setSaved(true);
+    try {
+      await adminApi.updateSystemSettings({ 
+        beauticianMaxDistanceKm: maxDistance,
+        gstPercent: gstPercent
+      });
+      localStorage.setItem("admin_settings", JSON.stringify(settings));
+      setSaved(true);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -103,6 +132,64 @@ const Settings = () => {
                 checked={settings.loginNotifications}
                 onCheckedChange={(v) => setSettings((p) => ({ ...p, loginNotifications: v }))}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* System Limitations */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <MapPin className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Service Area</h2>
+              <p className="text-sm text-muted-foreground">Configure global limits for service reach</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-base">Max Service Distance (Km)</Label>
+                <p className="text-sm text-muted-foreground">
+                  The maximum radius within which a beautician will receive appointment offers.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number"
+                  min={1}
+                  max={500}
+                  className="w-20 px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                  value={maxDistance}
+                  onChange={(e) => setMaxDistance(Number(e.target.value) || 1)}
+                />
+                <span className="text-sm text-muted-foreground">Km</span>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-base">GST Percentage (%)</Label>
+                <p className="text-sm text-muted-foreground">
+                  The Goods and Services Tax added to all appointments and product orders.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  className="w-20 px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                  value={gstPercent}
+                  onChange={(e) => setGstPercent(Number(e.target.value) || 0)}
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+              </div>
             </div>
           </div>
         </div>

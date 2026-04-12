@@ -163,6 +163,7 @@ export interface ApiBeautician {
   rating: number;
   status: "online" | "busy" | "offline";
   completedToday: number;
+  salaryType?: string;
 }
 
 export interface ApiBeauticianDetail {
@@ -176,6 +177,7 @@ export interface ApiBeauticianDetail {
   vendor: string;
   vendorId: string;
   platformCommissionPercent: number;
+  salaryType?: string;
   totalJobs: number;
   totalEarnings: number;
   walletBalance: number;
@@ -272,6 +274,12 @@ export interface ApiReferralSettings {
   updatedAt?: string;
 }
 
+export interface ApiSystemSettings {
+  beauticianMaxDistanceKm: number;
+  gstPercent: number;
+  updatedAt?: string;
+}
+
 export interface DashboardData {
   totalCities: number;
   totalVendors: number;
@@ -324,6 +332,12 @@ export const adminApi = {
       method: "PUT",
       body: JSON.stringify(body),
     }),
+  getSystemSettings: () => request<ApiSystemSettings>("/admin/system-settings").then(res => res.data!),
+  updateSystemSettings: (body: { beauticianMaxDistanceKm?: number; gstPercent?: number }) =>
+    request<ApiSystemSettings>("/admin/system-settings", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }).then(res => res.data!),
   getDashboard: () => request<DashboardData>("/admin/dashboard"),
   getCities: (page = 1, limit = 50, search = "") =>
     request<{ items: ApiCity[]; meta: { page: number; limit: number; total: number } }>("/admin/cities", {
@@ -627,4 +641,93 @@ export const adminApi = {
     }),
   updateProductOrderStatus: (id: string, status: string) =>
     request(`/admin/product-orders/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  getWithdrawals: (status?: string) =>
+    request<
+      Array<{
+        _id: string;
+        beautician: { _id: string; name: string; email: string; phone: string; bankDetails?: any };
+        amount: number;
+        status: "pending" | "approved" | "rejected";
+        createdAt: string;
+        adminNotes?: string;
+      }>
+    >("/withdrawals/admin/all", { params: status ? { status } : {} }),
+  updateWithdrawalStatus: (id: string, body: { status: "approved" | "rejected"; adminNotes?: string }) =>
+    request(`/withdrawals/admin/${id}/status`, { method: "PATCH", body: JSON.stringify(body) }),
+  getInvoice: (id: string) =>
+    request<{
+      _id: string;
+      invoiceNumber: string;
+      type: "service" | "product";
+      date: string;
+      customer: { name: string; email: string; phone: string; address: string };
+      vendor: { name: string; address: string; phone: string };
+      items: Array<{ name: string; quantity: number; price: number; total: number }>;
+      subTotal: number;
+      gstAmount: number;
+      total: number;
+      paymentMode: string;
+      status: string;
+    }>(`/admin/invoices/${id}`),
+  getVendorFinancials: (id: string) =>
+    request<{
+      vendor: { id: string; name: string; commissionPercent: number };
+      summary: {
+        totalRevenue: number;
+        totalAdminCommission: number;
+        totalVendorEarnings: number;
+        totalBeauticianEarnings: number;
+        appointmentCount: number;
+      };
+      transactions: Array<{
+        id: string;
+        date: string;
+        customer: string;
+        service: string;
+        beautician: string;
+        revenue: number;
+        adminFee: number;
+        vendorShare: number;
+        beauticianFinalEarnings: number;
+      }>;
+    }>(`/admin/vendors/${id}/financials`),
+  getBeauticianFinancials: (id: string, range: string = "all") =>
+    request<{
+      beautician: { id: string; name: string; adminCommissionPercent: number; vendorCommissionPercent: number };
+      summary: {
+        totalRevenue: number;
+        totalAdminCommission: number;
+        totalVendorEarnings: number;
+        totalBeauticianEarnings: number;
+        appointmentCount: number;
+      };
+      transactions: Array<{
+        id: string;
+        date: string;
+        customer: string;
+        service: string;
+        revenue: number;
+        adminFee: number;
+        vendorShare: number;
+        beauticianFinalEarnings: number;
+      }>;
+    }>(`/admin/beauticians/${id}/financials`, { params: { range } }),
+};
+
+export const vendorApi = {
+  getCityUsers: (page = 1, limit = 50, search = "") =>
+    request<{ items: ApiUser[]; meta: { page: number; limit: number; total: number } }>("/vendor/city-users", {
+      params: { page: String(page), limit: String(limit), search },
+    }),
+  createBeautician: (body: {
+    name: string;
+    email: string;
+    password?: string;
+    phone?: string;
+    expertise?: string[];
+    experienceYears?: number;
+    salaryType?: string;
+  }) => request<ApiBeautician>("/vendor/beauticians", { method: "POST", body: JSON.stringify(body) }),
+  updateBeautician: (id: string, body: { expertise?: string[]; experienceYears?: number; isAvailable?: boolean; salaryType?: string }) =>
+    request<ApiBeautician>(`/vendor/beauticians/${id}`, { method: "PUT", body: JSON.stringify(body) }),
 };

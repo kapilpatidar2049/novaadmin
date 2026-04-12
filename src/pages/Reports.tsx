@@ -19,6 +19,7 @@ import {
   Bar,
 } from "recharts";
 import { adminApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 function getDateRange(period: string): { from?: string; to?: string } {
   const to = new Date();
@@ -31,6 +32,7 @@ function getDateRange(period: string): { from?: string; to?: string } {
 }
 
 const Reports = () => {
+  const { isVendor } = useAuth();
   const [period, setPeriod] = useState("7d");
   const [paymentsByStatus, setPaymentsByStatus] = useState<Array<{ _id: string; totalAmount: number; count: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ const Reports = () => {
         setPaymentsByStatus([]);
       })
       .finally(() => setLoading(false));
-  }, [from, to]);
+  }, [from, to, isVendor]);
 
   const totalPaid = paymentsByStatus.find((p) => p._id === "paid")?.totalAmount ?? 0;
   const paidCount = paymentsByStatus.find((p) => p._id === "paid")?.count ?? 0;
@@ -214,8 +216,12 @@ const Reports = () => {
           <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Top Vendor Earnings</h3>
-                <p className="text-sm text-muted-foreground">From dashboard (paid payments by vendor)</p>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {isVendor ? "Revenue Performance" : "Top Vendor Earnings"}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {isVendor ? "Revenue details for your salon" : "From dashboard (paid payments by vendor)"}
+                </p>
               </div>
             </div>
             <div className="space-y-4">

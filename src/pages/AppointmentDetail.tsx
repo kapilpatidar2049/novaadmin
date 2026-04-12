@@ -35,7 +35,7 @@ const UNASSIGN_VALUE = "__unassign__";
 
 const AppointmentDetail = () => {
   const { isVendor } = useAuth();
-  const readOnly = isVendor;
+  const readOnly = false; // Both super admin and vendor can assign (backend handles permissions)
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ApiAppointmentDetail | null>(null);
@@ -138,12 +138,6 @@ const AppointmentDetail = () => {
             Back to Appointments
           </Button>
         </div>
-
-        {readOnly && (
-          <p className="text-sm rounded-md border border-border bg-muted/30 px-3 py-2 text-muted-foreground">
-            View-only: super admin can assign or change beauticians on bookings.
-          </p>
-        )}
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="p-6 border-b border-border">

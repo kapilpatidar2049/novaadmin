@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Store, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Store, MoreHorizontal, BarChart } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -293,6 +293,10 @@ const Vendors = () => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => navigate(`/vendors/${vendor._id}`)}>
                       View details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/vendors/${vendor._id}/financials`)}>
+                      <BarChart className="h-4 w-4 mr-2" />
+                      Financial Report
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {

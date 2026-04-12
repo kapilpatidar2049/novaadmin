@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, IndianRupee, User, Scissors, Search, ListFilter, Eye, MapPin } from "lucide-react";
+import { Calendar, IndianRupee, User, Scissors, Search, ListFilter, Eye, MapPin, FileText } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -263,10 +263,16 @@ const Appointments = () => {
               key: "actions",
               header: "Actions",
               render: (appt) => (
-                <Button variant="outline" size="sm" onClick={() => navigate(`/appointments/${appt.id}`)}>
-                  <Eye className="h-4 w-4 mr-1" />
-                  View
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/appointments/${appt.id}`)}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/invoices/${appt.id}`)}>
+                    <FileText className="h-4 w-4 mr-1" />
+                    Invoice
+                  </Button>
+                </div>
               ),
             },
           ]}

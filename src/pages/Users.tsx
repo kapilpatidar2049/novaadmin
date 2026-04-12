@@ -19,9 +19,11 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/common/DataTable";
-import { adminApi, type ApiUser } from "@/lib/api";
+import { adminApi, vendorApi, type ApiUser } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Users = () => {
+  const { isVendor } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -33,18 +35,23 @@ const Users = () => {
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
-    const res = await adminApi.getUsers(
-      page,
-      pageSize,
-      searchQuery,
-      roleFilter === "all" ? "" : roleFilter
-    );
+    let res;
+    if (isVendor) {
+      res = await vendorApi.getCityUsers(page, pageSize, searchQuery);
+    } else {
+      res = await adminApi.getUsers(
+        page,
+        pageSize,
+        searchQuery,
+        roleFilter === "all" ? "" : roleFilter
+      );
+    }
     if (res.success && res.data?.items) {
       setUsers(res.data.items);
       setTotal(res.data.meta.total);
     }
     setLoading(false);
-  }, [searchQuery, roleFilter, page]);
+  }, [searchQuery, roleFilter, page, isVendor]);
 
   useEffect(() => {
     fetchUsers();
@@ -114,16 +121,18 @@ const Users = () => {
               className="pl-9"
             />
           </div>
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
-              <SelectItem value="customer">Customers</SelectItem>
-              <SelectItem value="beautician">Beauticians</SelectItem>
-            </SelectContent>
-          </Select>
+          {!isVendor && (
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All roles</SelectItem>
+                <SelectItem value="customer">Customers</SelectItem>
+                <SelectItem value="beautician">Beauticians</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <DataTable

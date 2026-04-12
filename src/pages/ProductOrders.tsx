@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ type Row = {
 const statuses = ["confirmed", "processing", "shipped", "delivered", "cancelled"] as const;
 
 const ProductOrders = () => {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,6 +72,7 @@ const ProductOrders = () => {
                 <th className="text-left p-3 font-medium">Vendor</th>
                 <th className="text-right p-3 font-medium">Amount</th>
                 <th className="text-left p-3 font-medium">Status</th>
+                <th className="text-left p-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -114,6 +117,16 @@ const ProductOrders = () => {
                           </Select>
                         )}
                       </div>
+                    </td>
+                    <td className="p-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/invoices/${r._id}`)}
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        Invoice
+                      </Button>
                     </td>
                   </tr>
                 ))}
